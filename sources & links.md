@@ -76,6 +76,7 @@ _(pytesseract is better with docs and text. easyocr slower but better with image
 > ## Extra
 
 * https://www.sqlitetutorial.net/
+* https://www.sqlitetutorial.net/sqlite-python/
 * https://www.geeksforgeeks.org/python-gui-tkinter/
 
 * https://docs.opencv.org/4.x/d6/d00/tutorial_py_root.html
