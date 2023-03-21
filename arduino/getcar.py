@@ -2,7 +2,7 @@ import serial
 
 ser = serial.Serial('COM7',9600)
 def getcar(park_n):
-    c= 'G'+ chr(park_n);
+    c= '2'+ chr(park_n);
     ser.write(c.encode())
     ser.flush()
     while True :
