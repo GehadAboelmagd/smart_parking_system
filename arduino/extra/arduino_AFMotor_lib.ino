@@ -7,8 +7,8 @@ AF_Stepper motor_2(200,2);
 //motor_2 is dedicated for rotational motion
 //motor_2 is connected to M3,M4(port 2)
 
-void parking();
-void reverse_parking();
+void parking(int x);
+void reverse_parking(int x);
 
 void setup()
 {
@@ -37,7 +37,7 @@ void parking(int x)
   int coef=4; // or may be changed
   //let number of rotations to translate 1 floor(20 cm) is 4 rotations
   // 1 rotation = 5cm = 2*pi*r
-  int i = (x-1)/3; j=(x-1)%3;
+  int i = (x-1)/3; int j=(x-1)%3;
   motor_1.step((i+1.5)*200*coef,FORWARD,SINGLE);    delay(1000); 
   motor_2.step(50*(j+1),FORWARD,SINGLE);            delay(1000);
   motor_1.step(200*coef,BACKWARD,SINGLE);           delay(1000); 
@@ -46,12 +46,12 @@ void parking(int x)
 }
 
 
-void reverse_parking(int parking_place)
+void reverse_parking(int x)
 {
   int coef=4; // or may be changed
   //let number of rotations to translate 1 floor(20 cm) is 4 rotations
   // 1 rotation = 5cm = 2*pi*r
-  int i = (x-1)/3; j=(x-1)%3;
+  int i = (x-1)/3; int j=(x-1)%3;
   motor_1.step((i+.5)*200*coef,FORWARD,SINGLE);    delay(1000); 
   motor_2.step(50*(j+1),FORWARD,SINGLE);            delay(1000);
   motor_1.step(200*coef,FORWARD,SINGLE);           delay(1000); 
