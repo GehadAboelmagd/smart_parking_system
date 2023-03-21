@@ -1,9 +1,9 @@
-#include <Stepper.h>
+#include <AFMotor.h>
 
 // stepper
 const int stepsPerRevolution = 200;
-Stepper up_Stepper(stepsPerRevolution, 8, 9, 10, 11);
-Stepper down_Stepper(stepsPerRevolution, 0, 1, 2, 3);
+AF_Stepper up_Stepper(stepsPerRevolution, 1);
+AF_Stepper down_Stepper(stepsPerRevolution, 2);
 //
 
 // step 
@@ -28,7 +28,7 @@ void loop() {
 }
 
 void parking() {
-  
+
 }
 
 void get_car(){
@@ -36,15 +36,15 @@ void get_car(){
   int park_n = Serial.read();
   int f = park_n /3 , d = 50;
   int p = park_n %3; 
-  up_Stepper.step(floor_step[f]-d);
+  up_Stepper.step(floor_step[f]-d,FORWARD,SINGLE);
   delay(1000);
-  down_Stepper.step(park_step[p]);
+  down_Stepper.step(park_step[p],FORWARD,SINGLE);
   delay(1000);
-  up_Stepper.step((floor_step[f+1]-floor_step[f]));
+  up_Stepper.step((floor_step[f+1]-floor_step[f]),FORWARD,SINGLE);
   delay(1000);
-  down_Stepper.step(-park_step[p]);  
+  down_Stepper.step(park_step[p],BACKWARD,SINGLE);  
   delay(1000);  
-  up_Stepper.step(-(floor_step[f+1]-d));  
+  up_Stepper.step(floor_step[f+1]-d),BACKWARD,SINGLE);  
   delay(1000);
 
   Serial.write('D');
