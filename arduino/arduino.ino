@@ -1,60 +1,71 @@
-#include<AFMotor.h>
+#include <AFMotor.h>
 
-AF_Stepper motor_1(200,1);  
-//motor_1 is dedicated for vertical motion
-//motor_1 is connected to M1,M2(port 1)
-AF_Stepper motor_2(200,2);
-//motor_2 is dedicated for rotational motion
-//motor_2 is connected to M3,M4(port 2)
+// stepper
+const int stepsPerRevolution = 200;
+AF_Stepper up_Stepper(stepsPerRevolution, 1);
+AF_Stepper down_Stepper(stepsPerRevolution, 2);
+//
 
-void parking(int x);
-void reverse_parking(int x);
+// step 
+int floor_step[4] = {0,200,400,600};
+int park_step[3] = {50,100,150};
+//
 
-void setup()
-{
+void parking();
+void reverse_parking();
+
+void setup() {
+
   Serial.begin(9600);
-  motor_1.setSpeed(10); //10 rpm or maybe modified
-  motor_2.setSpeed(10); // may be modified
+  up_Stepper.setSpeed(60);
+  down_Stepper.setSpeed(60);  
 }
 
+void loop() {
 
-void loop()
-{
-  if(Serial.available()>0)
-  {
-    char parking_order=Serial.read();
-    int parking_place=Serial.read();  
-    // 1,2,3 for the 1st floor and 4,5,6 for 2nd floor 
-    if (parking_order=='1')        
-    parking(parking_place);
-    else if (parking_order=='2')   
-    reverse_parking(parking_place);
+  if(Serial.available()){
+    char c = Serial.read();
+    if(c == '1') parking();
+    else if(c == '2') reverse_parking();
   }
 }
 
-void parking(int x)
-{
-  int coef=4; // or may be changed
-  //let number of rotations to translate 1 floor(20 cm) is 4 rotations
-  // 1 rotation = 5cm = 2*pi*r
-  int i = (x-1)/3; int j=(x-1)%3;
-  motor_1.step((i+1.5)*200*coef,FORWARD,SINGLE);    delay(1000); 
-  motor_2.step(50*(j+1),FORWARD,SINGLE);            delay(1000);
-  motor_1.step(200*coef,BACKWARD,SINGLE);           delay(1000); 
-  motor_2.step(50*(j+1),BACKWARD,SINGLE);           delay(1000);
-  motor_1.step((i+.5)*200*coef,BACKWARD,SINGLE);
+void parking() {
+  while(!(Serial.available())){}
+  int park_n = Serial.read();
+  int f = (park_n /3)+1 , d = 50;
+  int p = park_n %3; 
+  up_Stepper.step(floor_step[f]+d,FORWARD,SINGLE);
+  delay(1000);
+  down_Stepper.step(park_step[p],FORWARD,SINGLE);
+  delay(1000);
+  up_Stepper.step((floor_step[f]-floor_step[f-1]),BACKWARD,SINGLE);
+  delay(1000);
+  down_Stepper.step(park_step[p],BACKWARD,SINGLE);  
+  delay(1000);  
+  up_Stepper.step((floor_step[f-1]+d),BACKWARD,SINGLE);  
+  delay(1000);
+
+  Serial.write('D');
+  Serial.flush(); 
 }
 
+void reverse_parking(){
+  while(!(Serial.available())){}
+  int park_n = Serial.read();
+  int f = (park_n /3)+1 , d = 50;
+  int p = park_n %3; 
+  up_Stepper.step(floor_step[f]-d,FORWARD,SINGLE);
+  delay(1000);
+  down_Stepper.step(park_step[p],FORWARD,SINGLE);
+  delay(1000);
+  up_Stepper.step((floor_step[f+1]-floor_step[f]),FORWARD,SINGLE);
+  delay(1000);
+  down_Stepper.step(park_step[p],BACKWARD,SINGLE);  
+  delay(1000);  
+  up_Stepper.step((floor_step[f+1]-d),BACKWARD,SINGLE);  
+  delay(1000);
 
-void reverse_parking(int x)
-{
-  int coef=4; // or may be changed
-  //let number of rotations to translate 1 floor(20 cm) is 4 rotations
-  // 1 rotation = 5cm = 2*pi*r
-  int i = (x-1)/3; int j=(x-1)%3;
-  motor_1.step((i+.5)*200*coef,FORWARD,SINGLE);    delay(1000); 
-  motor_2.step(50*(j+1),FORWARD,SINGLE);            delay(1000);
-  motor_1.step(200*coef,FORWARD,SINGLE);           delay(1000); 
-  motor_2.step(50*(j+1),BACKWARD,SINGLE);           delay(1000);
-  motor_1.step((i+1.5)*200*coef,BACKWARD,SINGLE);
+  Serial.write('D');
+  Serial.flush();
 }
