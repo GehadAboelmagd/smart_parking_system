@@ -23,6 +23,8 @@ void loop()
   if(Serial.available()>0)
   {
     char parking_order=Serial.read();
+    while(!Serial.available())
+    {}
     int parking_place=Serial.read();  
     // 1,2,3 for the 1st floor and 4,5,6 for 2nd floor 
     if (parking_order=='1')        
@@ -37,7 +39,18 @@ void parking(int x)
   int coef=4; // or may be changed
   //let number of rotations to translate 1 floor(20 cm) is 4 rotations
   // 1 rotation = 5cm = 2*pi*r
+
+  //code for fetching the platform
   int i = (x-1)/3; int j=(x-1)%3;
+  motor_1.step((i+.5)*200*coef,FORWARD,SINGLE);     delay(1000); 
+  motor_2.step(50*(j+1),FORWARD,SINGLE);            delay(1000);
+  motor_1.step(200*coef,FORWARD,SINGLE);            delay(1000); 
+  motor_2.step(50*(j+1),BACKWARD,SINGLE);           delay(1000);
+  motor_1.step((i+1.5)*200*coef,BACKWARD,SINGLE);   delay(1000);
+  
+  //code to detect the car is already now on the platform
+  
+  //code for parking the car
   motor_1.step((i+1.5)*200*coef,FORWARD,SINGLE);    delay(1000); 
   motor_2.step(50*(j+1),FORWARD,SINGLE);            delay(1000);
   motor_1.step(200*coef,BACKWARD,SINGLE);           delay(1000); 
@@ -52,9 +65,9 @@ void reverse_parking(int x)
   //let number of rotations to translate 1 floor(20 cm) is 4 rotations
   // 1 rotation = 5cm = 2*pi*r
   int i = (x-1)/3; int j=(x-1)%3;
-  motor_1.step((i+.5)*200*coef,FORWARD,SINGLE);    delay(1000); 
+  motor_1.step((i+.5)*200*coef,FORWARD,SINGLE);     delay(1000); 
   motor_2.step(50*(j+1),FORWARD,SINGLE);            delay(1000);
-  motor_1.step(200*coef,FORWARD,SINGLE);           delay(1000); 
+  motor_1.step(200*coef,FORWARD,SINGLE);            delay(1000); 
   motor_2.step(50*(j+1),BACKWARD,SINGLE);           delay(1000);
   motor_1.step((i+1.5)*200*coef,BACKWARD,SINGLE);
 }
