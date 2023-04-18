@@ -1,3 +1,11 @@
+"""
+								  Coder : ENG. Omar & Asmaa
+								  Version : v---
+								  Date :  18 / 4 / 2023
+								  Code Type : python | SQLite database=> smart_parking_project
+								  Title : Smart Parking System
+								  Interpreter : cPython  v3.11.0 [Compiler : MSC v.1933 AMD64]
+"""
 import sqlite3
 import datetime, time, math
 
