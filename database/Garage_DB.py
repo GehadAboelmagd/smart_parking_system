@@ -384,7 +384,7 @@ def access_img_table (readOrwrite : bool  , format : str = ".jpg" , img_to_write
 		else :
 			cursor.execute(""" SELECT img_data FROM reference_images WHERE img_name = ?; """ , (img_name ,) ) 
 			ref_img = cursor.fetchone()[0]
-			print("debug " , ref_img)#testing 
+			
 			return ref_img
 
 
