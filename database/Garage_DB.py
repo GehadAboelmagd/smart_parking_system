@@ -1,18 +1,18 @@
 """
-								  Coder : ENG. Omar & Asmaa
-								  Version : v---
-								  Date :  18 / 4 / 2023
+								  Coder : ENG.Omar | Eng.Asmaa
+								  Version : v1.0B
+								  version Date :  19 / 4 / 2023
 								  Code Type : python | SQLite database=> smart_parking_project
 								  Title : Smart Parking System
 								  Interpreter : cPython  v3.11.0 [Compiler : MSC v.1933 AMD64]
 """
 import sqlite3
-import cv2
 import numpy as np
-import datetime, time, math
+import datetime
+import time
+import math
 
 
-# TODO : TEST the new db_check_ai_id() function
 # TODO : Add gmail extension  via : smtp or  yagmail or pygmail python libraries ( ask chat gpt and look your old gmail api to know more)
 # TODO : Enhance error handling  and bug testing
 ###########################################################################
@@ -79,7 +79,7 @@ def create_db(conn):
         """
     )
 
-    #table 4 platform
+    # table 4 platform
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS Platform(
@@ -89,17 +89,17 @@ def create_db(conn):
         );
         """
     )
-    
-    #table 5 id reference image for CV operations
+
+    # table 5 id reference image for CV operations
     cursor.execute(
-	"""
+        """
 	CREATE TABLE IF NOT EXISTS reference_images(
 		ref_id  INTEGER PRIMARY KEY AUTOINCREMENT ,
 		img_name TEXT UNIQUE,
 		img_data BLOB
 	);
 	"""
-	 )
+    )
 
 # 30 test sample of non real people info ( 1st two records is expired and about to expire license for later use)
     cursor.execute(
@@ -179,27 +179,27 @@ def calc_cost(person_id: str, conn):
      """
 
     cursor = conn.cursor()
-    tot_cost_le, tot_time_hour, cost_per_hour = 0, 0, 3  # change_cost_per hour as you wish
+    # change_cost_per hour as you wish
+    tot_cost_le, tot_time_hour, cost_per_hour = 0, 0, 3
 
     # use julianday() is slqite3 function that gets time in days
     cursor.execute(
         """
         SELECT  JULIANDAY(timestamp) FROM event_log WHERE person_id = ? AND event_type = 0
         ORDER BY event_id DESC;
-        """
-        , (person_id,))
+        """, (person_id,))
     last_id_park_event_time = (cursor.fetchone())[0]
 
     cursor.execute(
         """
         SELECT  JULIANDAY(timestamp) , event_id FROM event_log WHERE person_id = ? AND event_type = 1
         ORDER BY event_id DESC;
-        """
-        , (person_id,))
+        """, (person_id,))
     last_free_id_info = (cursor.fetchall())[0]
     last_id_free_event_time = last_free_id_info[0]
 
-    time_diff_in_hours = (last_id_free_event_time - last_id_park_event_time) * 24
+    time_diff_in_hours = (last_id_free_event_time -
+                          last_id_park_event_time) * 24
     tot_time_hour = math.ceil(time_diff_in_hours)
     tot_cost_le = tot_time_hour * cost_per_hour
     # cost per hour = 3 LE ( I know it's cheap ==~ 0.3$)
@@ -211,14 +211,14 @@ def calc_cost(person_id: str, conn):
     cursor.execute(
         """
         UPDATE event_log SET cost = ? WHERE event_id = ? ;
-        """
-        , (tot_cost_le, event_to_update))
+        """, (tot_cost_le, event_to_update))
     conn.commit()
     conn.close()
 
     # return to get_car_db()
     # ( so that get_car_db() return finally to  main code the : cell_id to free  , total cost  , total parking time )
-    return (tot_cost_le, tot_time_hour)  # change to list [] if you want to easy overwrite
+    # change to list [] if you want to easy overwrite
+    return (tot_cost_le, tot_time_hour)
 
 
 ###########################################################################
@@ -317,13 +317,15 @@ def get_car_db(conn, cmd, id):
         conn.commit()
 
         # UPDATE parking status table
-        cursor.execute(""" UPDATE parking_status SET status = 0 , taken_by = NULL WHERE taken_by = ? ;""", (id,))
+        cursor.execute(
+            """ UPDATE parking_status SET status = 0 , taken_by = NULL WHERE taken_by = ? ;""", (id,))
         conn.commit()
 
         # conn.close() will be in calc_cost() function
         # return parking cell number + park cost info
         print("debug message : SUCCESS Database has been CHANGED!\n")
-        return (cell_data[0], *calc_cost(id, conn))  # change to list [] if you want to easy overwrite
+        # change to list [] if you want to easy overwrite
+        return (cell_data[0], *calc_cost(id, conn))
 
 
 ###########################################################################
@@ -352,40 +354,39 @@ def db_check_ai_id(id_to_chk: str) -> bool:  # NOTE : still not tested
 
     return is_found
 ###########################################################################
-def access_img_table (readOrwrite : bool  , format : str = ".jpg" , img_to_write : np.ndarray = None , img_name : str = "ref_rot_img") :
-	"""
-	
-	*  readOrwrite == 0 ->read img 
- 
-	*  readOrwrite == 1 ->write img
-	
-	Returns:
- 
-		None 	  => if readOrwrite == 1
- 
-		ref_img => if readOrwrite == 0
-	"""
-	with connect_db() as db:
-		cursor = db.cursor()
-		if  readOrwrite == 1 :
-     
-			succeeded  , encoded_img = cv2.imencode( ext= format , img= img_to_write)
-   
-			if not succeeded :
-				return False #Error
- 			
-			else:
-				cursor.execute("""INSERT INTO reference_images  (img_name , img_data) 
-									VALUES (?,?);
-									""" , (img_name , encoded_img) )
-				db.commit()
-				return True #success
- 
-		else :
-			cursor.execute(""" SELECT img_data FROM reference_images WHERE img_name = ?; """ , (img_name ,) ) 
-			ref_img = cursor.fetchone()[0]
-			
-			return ref_img
+
+
+def access_img_table(readOrwrite: bool, img_to_write: np.ndarray = None, img_name: str = "ref_rot_img"):
+    """
+
+    *  readOrwrite == 0 ->read img 
+
+    *  readOrwrite == 1 ->write img
+
+    Returns:
+
+            None 	  => if readOrwrite == 1
+
+            ref_img => if readOrwrite == 0
+    """
+    with connect_db() as db:
+        cursor = db.cursor()
+
+        if readOrwrite == 1:  # write
+            encoded_img = img_to_write
+            cursor.execute(
+                """INSERT INTO reference_images  (img_name , img_data) 
+                   VALUES (?,?);
+                """, (img_name, encoded_img)
+            )
+            db.commit()
+
+        else:  # read
+            cursor.execute(
+                """ SELECT img_data FROM reference_images WHERE img_name = ?; """, (img_name,))
+            ref_img_encoded = cursor.fetchone()[0]
+
+            return ref_img_encoded
 
 
 ###########################################################################
@@ -397,8 +398,6 @@ def db_cmd(cmd: int, id: str):
         return park_car_db(conn, cmd, id)
     elif cmd == 1:  # get car FROM park command ( free a cell )
         return get_car_db(conn, cmd, id)
-
-
 
 
 ###########################################################################
