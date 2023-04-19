@@ -93,7 +93,7 @@ def create_db(conn):
     # table 5 id reference image for CV operations
     cursor.execute(
         """
-	CREATE TABLE IF NOT EXISTS reference_images(
+	CREATE TABLE IF NOT EXISTS reference_images (
 		ref_id  INTEGER PRIMARY KEY AUTOINCREMENT ,
 		img_name TEXT UNIQUE,
 		img_data BLOB
