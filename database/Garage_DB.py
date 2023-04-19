@@ -7,6 +7,8 @@
 								  Interpreter : cPython  v3.11.0 [Compiler : MSC v.1933 AMD64]
 """
 import sqlite3
+import cv2
+import numpy as np
 import datetime, time, math
 
 
@@ -87,6 +89,17 @@ def create_db(conn):
         );
         """
     )
+    
+    #table 5 id reference image for CV operations
+    cursor.execute(
+	"""
+	CREATE TABLE IF NOT EXISTS reference_images(
+		ref_id  INTEGER PRIMARY KEY AUTOINCREMENT ,
+		img_name TEXT UNIQUE,
+		img_data BLOB
+	);
+	"""
+	 )
 
 # 30 test sample of non real people info ( 1st two records is expired and about to expire license for later use)
     cursor.execute(
@@ -315,17 +328,6 @@ def get_car_db(conn, cmd, id):
 
 ###########################################################################
 
-
-def db_cmd(cmd: int, id: str):
-    ''' this is the main database fucntion and what other parts of code will see and use 99% of time '''
-    conn = connect_db()
-    if cmd == 0:  # park car command
-        return park_car_db(conn, cmd, id)
-    elif cmd == 1:  # get car FROM park command ( free a cell )
-        return get_car_db(conn, cmd, id)
-
-
-###########################################################################
 def db_check_ai_id(id_to_chk: str) -> bool:  # NOTE : still not tested
     """
     Returns :
@@ -349,6 +351,53 @@ def db_check_ai_id(id_to_chk: str) -> bool:  # NOTE : still not tested
             is_found == False,
 
     return is_found
+###########################################################################
+def access_img_table (readOrwrite : bool  , format : str = ".jpg" , img_to_write : np.ndarray = None , img_name : str = "ref_rot_img") :
+	"""
+	
+	*  readOrwrite == 0 ->read img 
+ 
+	*  readOrwrite == 1 ->write img
+	
+	Returns:
+ 
+		None 	  => if readOrwrite == 1
+ 
+		ref_img => if readOrwrite == 0
+	"""
+	with connect_db() as db:
+		cursor = db.cursor()
+		if  readOrwrite == 1 :
+     
+			succeeded  , encoded_img = cv2.imencode( ext= format , img= img_to_write)
+   
+			if not succeeded :
+				return False #Error
+ 			
+			else:
+				cursor.execute("""INSERT INTO reference_images  (img_name , img_data) 
+									VALUES (?,?);
+									""" , (img_name , encoded_img) )
+				db.commit()
+				return True #success
+ 
+		else :
+			cursor.execute(""" SELECT img_data FROM reference_images WHERE img_name = ?; """ , (img_name ,) ) 
+			ref_img = cursor.fetchone()[0]
+			print("debug " , ref_img)#testing 
+			return ref_img
+
+
+###########################################################################
+
+def db_cmd(cmd: int, id: str):
+    ''' this is the main database fucntion and what other parts of code will see and use 99% of time '''
+    conn = connect_db()
+    if cmd == 0:  # park car command
+        return park_car_db(conn, cmd, id)
+    elif cmd == 1:  # get car FROM park command ( free a cell )
+        return get_car_db(conn, cmd, id)
+
 
 
 
