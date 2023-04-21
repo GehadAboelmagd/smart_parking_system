@@ -56,8 +56,9 @@ def make_rectangle_obj( frame : np.ndarray  , id_dimension : tuple  , color : st
     'color' : (red if color == 'red' else green ), 
     'thickness' : 2 ,
     }
- 
-	frame_edited = frame.copy()
+	
+
+	frame_edited = frame.copyTo ()
 	
 	#get points to position helper rectangle in center
 	y_center , x_center , _ = [ int(x) // 2 for x in frame_edited.shape ]
@@ -367,6 +368,8 @@ def proccess_vid_frame( _frame : np.ndarray , _id_dimension : tuple , _is_valid 
   
 		#keep original video frame with out the rectangle and timer objects for better proccess
 		img = _frame.copy()
+		img = cv2.UMat(img)
+		_frame = cv2.UMat(_frame)
   
 		#make the rectangle object to help position ID card when scanning (initially RED)
 		frame , pos = make_rectangle_obj( _frame , _id_dimension , ('red' if _is_valid == 0 else 'green'))
@@ -560,10 +563,12 @@ def read_simple_card_opencl( vid : cv2.VideoCapture , vid_specs : list , id_card
 	
 	#needed in deskew()  (called it here to save thousands of calls to db in while loop)
 	ref_img = get_ref_img_db()
+	ref_img = cv2.UMat(ref_img)
  
 	while vid_time_cnt > 0: #start capture camera for vid_length_sec 
 
 		no_error , frame =  vid.read()
+		
 
 		if  not no_error :
 			print(f"""
@@ -758,7 +763,7 @@ def ocr_main (id_dimension : tuple = (810 , 542) , id_type_indx : int = 0 ) -> s
 			final_status , scanned_id = read_simple_card_opencl(vid , vid_specs , ids_specs[0])
 		elif id_type_indx == 1 : #TODO: lisence card
 			pass
-		elif  id_type_indx == 2 : #TODO: car plate id 
+		elif  id_type_indx == 2 : #TODO: car plate id
 			pass
 
 	vid.release()
