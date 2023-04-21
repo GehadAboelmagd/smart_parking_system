@@ -96,7 +96,9 @@ def create_db(conn):
 	CREATE TABLE IF NOT EXISTS reference_images (
 		ref_id  INTEGER PRIMARY KEY AUTOINCREMENT ,
 		img_name TEXT UNIQUE,
-		img_data BLOB
+		img_data BLOB,
+		Extracted_id TEXT,
+		FOREIGN KEY (Extracted_id) REFERENCES people_info(id)
 	);
 	"""
     )
