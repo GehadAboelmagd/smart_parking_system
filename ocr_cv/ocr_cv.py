@@ -10,6 +10,9 @@
 import os 
 import sys
 import cv2
+import time 
+import psutil
+
 import pyautogui
 import numpy as np
 import pytesseract as tsr
@@ -17,7 +20,7 @@ import pytesseract as tsr
 import Garage_DB as db
 
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
-# TODO : use cuda and umat for frames and images instead of normal matrices when GPU accel is present
+# TODO : finish CUDA accel function and use it in ocr_main()
 # TODO : show a  timer in  video ( 5 ~ 10 sec )  use cv2.puttext()
 # TODO : add audio feedback 
 # TODO : car plate / license id simple  template detection
@@ -27,11 +30,11 @@ import Garage_DB as db
 
 
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
-def render_timer ( frame : np.ndarray , timer : int ) -> np.ndarray : ... 
+def render_timer ( frame : cv2.UMat | np.ndarray , timer : int , **extraArgs ) -> cv2.UMat | np.ndarray : ... 
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
 
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
-def make_rectangle_obj( frame : np.ndarray  , id_dimension : tuple  , color : str ) -> np.ndarray : 
+def make_rectangle_obj( frame : cv2.UMat | np.ndarray , id_dimension : tuple  , color : str , **extraArgs ) -> tuple: 
 	"""
 		1. specs of rectangle to be rendered in live video for guiding end user
   
@@ -48,20 +51,24 @@ def make_rectangle_obj( frame : np.ndarray  , id_dimension : tuple  , color : st
 	blue  = (255 , 0 , 0)
 	green = ( 0  , 255 , 0)
 	red   = ( 0  , 0 , 255)
-	x1 , x2 , y1 , y2 = [None for i in range(4)]
+	frame_shape = extraArgs['_frame_shape']
+	x1 , x2 , y1 , y2 = [-1 for i in range(4)]
  
 	rec_spec = {
     'top_left_coordinate'  : tuple , 
     'bot_right_coordinate' : tuple  ,
     'color' : (red if color == 'red' else green ), 
-    'thickness' : 2 ,
+    'thickness' : 1 ,
     }
+ 
+	#keep separate copy of original video frame with out the rectangle and timer objects for better proccess 
+	frame_to_show = cv2.UMat(np.array(frame.get())) #deep copy ->  not share any data with frame (may take more mem. but efficent than COW copy + solved '=' problem)
 	
-
-	frame_edited = frame.copyTo ()
-	
+	if testing_mode == True : #TESTING
+		print (f"frame_to_show var type: {type(frame_to_show)}")
+ 
 	#get points to position helper rectangle in center
-	y_center , x_center , _ = [ int(x) // 2 for x in frame_edited.shape ]
+	y_center , x_center = [ int(x) // 2 for x in frame_shape ] #frame_to_show  has no shape attribute (UMat obj)
 		#top left 
 	x1 , y1 = x_center - id_dimension[0] // 2 , y_center - id_dimension[1] // 2
 		#bot_right
@@ -70,7 +77,7 @@ def make_rectangle_obj( frame : np.ndarray  , id_dimension : tuple  , color : st
 	rec_spec['top_left_coordinate'] , rec_spec['bot_right_coordinate'] = (x1 , y1) , (x2 , y2)
 	
 	
-	frame_rect_obj = cv2.rectangle ( frame_edited , *rec_spec.values() )
+	frame_rect_obj = cv2.rectangle ( frame_to_show , *rec_spec.values() )
     
     
 	pos = [(x1 , y1 ) , (x2 , y2)]
@@ -80,7 +87,7 @@ def make_rectangle_obj( frame : np.ndarray  , id_dimension : tuple  , color : st
  
 
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
-def check_gpu_accl () -> tuple :
+def check_gpu_accl (_default_gpu : int = 1) -> tuple : #default gpu set to nvidia cuda == 1
 	"""
 	* use only  inside video_settings()
 
@@ -104,7 +111,7 @@ def check_gpu_accl () -> tuple :
     ---
   
 	* Returns:
- 		tuple (is_enabled? , gpu_type 2== cuda 1==opencl)
+ 		tuple (is_enabled? , gpu_type 1== cuda 2==opencl)
   
 	"""
 
@@ -115,24 +122,30 @@ def check_gpu_accl () -> tuple :
 	opencl_enabled : bool = cv2.ocl.haveOpenCL()
 	cv2.ocl.setUseOpenCL(True) if opencl_enabled else False
 
-	#alternative check for opencl 
-	# opencl_enabled : bool = 'OpenCL' in cv2.getBuildInformation()
+	#alternative check for opencl (but i'll do it also XD)
+	opencl_enabled : bool = 'OpenCL' in cv2.getBuildInformation()
+	if opencl_enabled : cv2.ocl.setUseOpenCL(True)
  
+ 	#even if no gpu accel available  default function is Nvidia cuda function => 2
+	gpu_accel_enabled : list[bool , int]= [False  , 2]
  
- 	#list 1st indx = true if any api is enabled  , 2nd indx is to specify the enabled api -> 1 = cuda , 2 = opencl
-	gpu_accel_enabled : list = [False  , None]
- 
+  
 	if cuda_enabled and cuda_available : 
-		gpu_accel_enabled [:] = True , 1
+		gpu_accel_enabled [:2] = True , 1
+		if _default_gpu == 1 : return tuple ( gpu_accel_enabled )  #even if opencl is avilable gpu def is nvidia if == 1 
   
 	if opencl_enabled :
-		gpu_accel_enabled [:] = True , 2
-	
-	return tuple ( gpu_accel_enabled ) 
+	#no need to check if its default ( it will auto override if nvidia is not default )
+		gpu_accel_enabled [:2] = True , 2 
+
+	return tuple ( gpu_accel_enabled )
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
 
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
-def enable_multithreading () : ... #in case gpu acceleration is not enough to maintain stable 30fps
+def enable_multithreading (thread_no : int = 4) :  #in case gpu acceleration is not enough to maintain stable 30fps
+	cv2.setNumThreads(thread_no)#enable cv2 multithread
+	ret = f"number of cv2 used threads: {cv2.getThreadNum()} "
+	return ret
 
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
 
@@ -164,17 +177,26 @@ def video_settings_setup (cam_indx : int  = 0, fps : int = 30 , vid_length_sec :
 	"""
 	#set the path to the tesseract dir ( not needed if you added it to win. env. variables)
 	tsr.pytesseract.tesseract_cmd =  r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+ 
+	# Get the process object for the current process
+	process = psutil.Process(os.getpid())
+	# Set the process priority to "high"
+	process.nice(psutil.HIGH_PRIORITY_CLASS)
 	
+	enable_multithreading(12)
+ 
 	is_gpu_accel_enabled  , gpu_api = check_gpu_accl () 
+	
  
 	if testing_mode == True :
 		print ( f"gpu api is : {gpu_api}") #TESTING
  
 	if is_gpu_accel_enabled :
-		if gpu_api == 1 : #use Cuda video object
+		if gpu_api == 1 : #use cuda vid obj 
+			
 			#you can change video I/O backends used by adding  the argument :
 			#cv2.CAP_DSHOW  (Dshow is the default in my omar-pc)
-			vid = cv2.VideoCapture(cam_indx , cv2.CAP_DSHOW)
+			vid = cv2.VideoCapture(cam_indx , cv2.CAP_CUDA)
 		else : #OpencL
 			vid = cv2.VideoCapture(cam_indx , cv2.CAP_DSHOW)
 	else : #DEFAULT 
@@ -188,7 +210,7 @@ def video_settings_setup (cam_indx : int  = 0, fps : int = 30 , vid_length_sec :
 		print (f"cv2 res is : {wCV2, hCV2}") #TESTING
 		# TO GET YOUR DEFAULT SCREEN RES :
 		wSCREEN , hSCREEN = pyautogui.size()#TESTING
-		print ( f" screen res is : {wSCREEN , hSCREEN}")#TESTING
+		print ( f"screen res is : {wSCREEN , hSCREEN}")#TESTING
 		  
 	
 	#set custom res
@@ -208,9 +230,6 @@ def compare_img ( img_to_comp : np.ndarray  , ref_img : np.ndarray) -> list :
 	''' Returns : good_matches , (ref_kp , img_kp) '''
  
  
-	#TODO : try crop rather than resize
-	# new_size = ref_img.shape[:2]
-	# img_to_comp = cv2.resize(img_to_comp , new_size)
  
 
 #NOTE: DETECT keypoints and create the decriptors for ref.img and img_to_cmp
@@ -229,6 +248,10 @@ def compare_img ( img_to_comp : np.ndarray  , ref_img : np.ndarray) -> list :
 		return -1 , -1
  
 #NOTE: MATCH and save best matches
+
+	if testing_mode == True : #TESTING
+		print (f"ref_desc type : {type(ref_desc)}  img_desc  type {type(img_desc)}")
+  
 	matched_descs = match_obj.match(ref_desc , img_desc) 
 	#match() returns DMatch_Obj = [img_desc_indx , ref_img_desc_indx , distance]
 	
@@ -319,22 +342,24 @@ def rotate_180 (img_to_rotate_180 : np.ndarray) -> np.ndarray :
 
 	return  rotated_180_img
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
-def deskew_img(  img_to_skew : np.ndarray , ref_img : np.ndarray ) -> np.ndarray : #lets call it de-rotate for now
+def deskew_img(  img_to_skew : np.ndarray , ref_img : np.ndarray , **extraArgs ) -> np.ndarray : #lets call it de-rotate for now
 	"""
 ---
 	Returns:
 		 np.ndarray: image after deskew
    if error return -1
 	"""
-	img_shape = img_to_skew.shape	
+	img_shape = extraArgs['img_shape']
 	match_err = False
  
-	good_matches , key_points  = compare_img( img_to_skew , ref_img)
+ 
+	good_matches , key_points = compare_img( img_to_skew , ref_img)
+ 
 	if good_matches == -1 or key_points == -1 :
 		return -1 
 
-	trans_mat 	 					= get_trans_mat( good_matches , key_points)
- 
+	trans_mat = get_trans_mat( good_matches , key_points)
+
 	skewed_angle , coordinates = get_skew_angle ( trans_mat , img_shape)
  
 	if skewed_angle == -1 or coordinates == -1: 
@@ -346,97 +371,123 @@ def deskew_img(  img_to_skew : np.ndarray , ref_img : np.ndarray ) -> np.ndarray
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
  
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
-def proccess_vid_frame( _frame : np.ndarray , _id_dimension : tuple , _is_valid ,  _is_valid2 , _ref_img : np.ndarray) -> np.ndarray :
-		"""
-		0. cvt to gray-scale
-		1. inv frame
-		2. threshold fram
-		3. deskew frame
-		4. sharpen the frame
-		5. dilate frame by one itteration 
-  
-#### NOTE: image background blackk and foreground is white and foreground is what we need this makes ocr better 
+def proccess_vid_frame( _frame : cv2.UMat | np.ndarray , _id_dimension : tuple , _is_valid ,  _is_valid2 , _ref_img : cv2.UMat | np.ndarray , **extraArgs) -> cv2.UMat | np.ndarray :
+	"""
+	0. cvt to gray-scale
+	1. inv frame
+	2. threshold fram
+	3. deskew frame
+	4. sharpen the frame
+	5. dilate frame by one itteration 
+
+#### NOTE: image background black and foreground is white and foreground is what we need this makes ocr better 
 #### to use opposite  use erode() instead of dilate()
 
 
 ---
-		Returns:
-			final_img_deskew , final_img_no_deskew
+	Returns:
+		final_img_deskew , final_img_no_deskew
+
+	if error return -1
+"""
+
+	skip = False
+ 
+	# TODO : benchmark passing to proccess_vid_frame() as mat then copy() then cvt both copy and frame to UMat and this method
+	# NOTE : if prev. todo is better in benchmark then be aware that this function is used from both cuda and opencl functions
+	# and you will need to make another for cude
+
+	#make the rectangle object to help position ID card when scanning (initially RED)
+	frame  , pos  = make_rectangle_obj( _frame , _id_dimension , ('red' if _is_valid  == 0 else 'green') , _frame_shape = extraArgs['frame_shape'] )
+	frame2 , pos2 = make_rectangle_obj( _frame , _id_dimension , ('red' if _is_valid2 == 0 else 'green') , _frame_shape = extraArgs['frame_shape'] )
+
+	# TODO : frame = make_timer_obj (frame , _id_dimension , time_left_sec : int )
+
+	#show green  if any edited  frames suceeded (at fps to visual aid enduser)
+	if _is_valid == 1 :
+		cv2.imshow("Camera", frame)
+	elif _is_valid2 == 1 :
+		cv2.imshow("Camera", frame2)
+	else : #show any red
+		cv2.imshow("Camera", frame)
+  
+	frames_to_skip_procs = 10
+
+	if extraArgs['count'] % frames_to_skip_procs != 0 :
+		skip = True
+		if testing_mode == True : #TESTING
+			print( f"skip frame? {skip}")
    
-		if error return -1
-	"""
-  
-		#keep original video frame with out the rectangle and timer objects for better proccess
-		img = _frame.copy()
-		img = cv2.UMat(img)
-		_frame = cv2.UMat(_frame)
-  
-		#make the rectangle object to help position ID card when scanning (initially RED)
-		frame , pos = make_rectangle_obj( _frame , _id_dimension , ('red' if _is_valid == 0 else 'green'))
-		frame2 , pos2 = make_rectangle_obj( _frame , _id_dimension , ('red' if _is_valid2 == 0 else 'green'))
+		return skip , skip , skip
 
-		# TODO : frame = make_timer_obj (frame , _id_dimension , time_left_sec : int )
+	if extraArgs['count'] % frames_to_skip_procs == 0 :
+		skip = False
   
-		#show green  if any edited  frames suceeded (at fps to visual aid enduser)
-		if _is_valid == 1 :
-			cv2.imshow("Camera", frame)
-		elif _is_valid2 == 1 :
-			cv2.imshow("Camera", frame2)
-		else : #show any red
-			cv2.imshow("Camera", frame)
+	if testing_mode == True : #TESTING
+				print( f"skip frame? {skip}")
+	
+	x1 , y1 = pos[0][0] , pos[0][1]
+	x2 , y2 = pos[1][0] , pos[1][1]
 
-		x1 , y1 = pos[0][0] , pos[0][1]
-		x2 , y2 = pos[1][0] , pos[1][1]
-  
-		#crop image to get the id card only (with + 5px than actuall id size)
-		_frame = _frame[ y1 : y2 , x1 : x2  ]
+	#crop image to get the id card only (with + 5px than actuall id size)
+	# _frame = _frame[ y1 : y2 , x1 : x2  ] #dont work for Umat
+	_frame = cv2.UMat( _frame , [y1 , y2] , [x1 , x2]) 
+ 
+	#change image to gray scale cuz THRESH OTSU Needs that
+	_frame = cv2.cvtColor(_frame , cv2.COLOR_BGR2GRAY)
 
-		#change image to gray scale cuz THRESH OTSU Needs that
-		_frame = cv2.cvtColor(_frame , cv2.COLOR_BGR2GRAY)
-  
-		# if testing_mode == True :
-		# 	cv2.imshow("TESTING : show image before edit *grayed*" , _frame) #TESTING
-  
-		_frame = cv2.bitwise_not(_frame)
-  
-		# if testing_mode == True :
-		# 	cv2.imshow("TESTING : show image bitwise not" , _frame)#TESTING
-  
-  
-		_frame = cv2.threshold(_frame , 0 , 255 , cv2.THRESH_BINARY_INV+ cv2.THRESH_OTSU)[1]
-  
-		# if testing_mode == True :
-		# 	cv2.imshow("TESTING : show image threshed" , _frame)#TESTING
+	# if testing_mode == True :
+	# 	cv2.imshow("TESTING : show image before edit *grayed*" , _frame) #TESTING
 
-		no_deskew = _frame.copy()
-		_frame = deskew_img( _frame , _ref_img )
-  
-		if type(_frame) == type(-1) : #skip this frame
-			return -1 , -1			
+	_frame = cv2.bitwise_not(_frame)
 
-		#continue process
-		_frame = cv2.Laplacian(_frame, cv2.CV_8U, ksize=3)
-		no_deskew = cv2.Laplacian(no_deskew, cv2.CV_8U, ksize=3)
-  
-  
-  
-		kernel    = np.ones((1,3) , dtype= np.uint8)#little bit  better for text(more horizentally focused)
-		kernel2   = np.ones((3,3) , dtype= np.uint8)
-		_frame 	 = cv2.dilate(_frame , kernel= kernel)
-		no_deskew = cv2.dilate(no_deskew , kernel= kernel)
-		# _frame = cv2.erode(_frame , kernel= kernel)
+	# if testing_mode == True :
+	# 	cv2.imshow("TESTING : show image bitwise not" , _frame)#TESTING
 
 
-		img_final_deskew= _frame
-		img_final_no_deskew = no_deskew
+	_frame = cv2.threshold(_frame , 0 , 255 , cv2.THRESH_BINARY_INV+ cv2.THRESH_OTSU)[1]
 
-  
-		if testing_mode == True :
-			cv2.imshow("TESTING : show image final_deskewed)" , img_final_deskew)#TESTING
-			cv2.imshow("TESTING : show image final_not_deskewed)" , img_final_no_deskew)#TESTING
-   
-  
-		return img_final_deskew , img_final_no_deskew
+	# if testing_mode == True :
+	# 	cv2.imshow("TESTING : show image threshed" , _frame)#TESTING
+
+	no_deskew = cv2.UMat(np.array(_frame.get()))  #deep copy _frame ( efficient but takes more mem.)
+	#COW copy method of _frame (saves mem but puts overhead + some issues)
+ 
+	# no_deskew = cv2.UMat(no_deskew , [y1 , y2] , [x1, x2]) #.get() for some reason resets shape to screen res
+
+	_frame = deskew_img( _frame , _ref_img , img_shape= extraArgs['frame_shape'] )
+
+	if type(_frame) == type(-1) : #skip this frame
+		return skip , skip , skip
+
+	#continue process
+	_frame = cv2.Laplacian(_frame, cv2.CV_8U, ksize=3)
+	no_deskew = cv2.Laplacian(no_deskew, cv2.CV_8U, ksize=3)
+
+
+
+	kernel    = np.ones((1,3) , dtype= np.uint8)#little bit  better for text(more horizentally focused)
+	kernel2   = np.ones((3,3) , dtype= np.uint8)
+	_frame 	 = cv2.dilate(_frame , kernel= kernel)
+	no_deskew = cv2.dilate(no_deskew , kernel= kernel)
+
+
+	img_final_deskew = _frame
+	img_final_no_deskew = no_deskew
+ 
+
+
+	if testing_mode == True : #TESTING
+		print (f" UMat final imgs sizes are (not the window the img itself in gpu) ")
+		temp_deskew_shape = _frame.get().shape[0] , _frame.get().shape[1]
+		temp_no_deskew_shape = no_deskew.get().shape[0] , no_deskew.get().shape[1]
+		print (f" not_deskewed shape : {temp_no_deskew_shape}")
+		print (f" deskewed shape : {temp_deskew_shape}")
+		cv2.imshow("TESTING : show image final_deskewed" , img_final_deskew)#TESTING
+		cv2.imshow("TESTING : show image final_not_deskewed" , img_final_no_deskew)#TESTING
+
+
+	return img_final_deskew , img_final_no_deskew , skip
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
  
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
@@ -515,12 +566,11 @@ def search_id( id_char_type : str , scanned_image : str , valid_ids_freq : dict 
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
  
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
-def read_simple_card_cuda ( vid : cv2.VideoCapture , vid_specs : list , id_card_specs : dict , is_valid : bool = False) -> str :
+def read_simple_card_cuda (vid : cv2.VideoCapture , vid_specs : list , id_card_specs : dict , is_valid : bool = False) -> str :
 	#gpu index to use in acceleration
 	cv2.cuda.setDevice(0) 
 
-
-	vid = cv2.VideoCapture(0, cv2.CAP_CUDA)
+	#vid = cv2.VideoCapture(0, cv2.CAP_CUDA)
 
 	# Check if the camera is successfully opened
 	return False if not vid.isOpened() else True
@@ -532,7 +582,6 @@ def read_simple_card_cuda ( vid : cv2.VideoCapture , vid_specs : list , id_card_
 
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
 def read_simple_card_opencl( vid : cv2.VideoCapture , vid_specs : list , id_card_specs : dict , is_valid = False  , is_valid2 = False) -> str : #NOTE: also use it when no GPU
-	#TODO : use UMat 
 	"""
 	* Args:
 
@@ -554,50 +603,82 @@ def read_simple_card_opencl( vid : cv2.VideoCapture , vid_specs : list , id_card
 
 	status is 'False' when error reading frame or scan id
 	"""
+  
 	valid_cnt , valid_cnt2 = 0 , 0
-	valid_ids_freq = {} #updated at search_id()
+	valid_ids_freq = {}  #updated at search_id()
 	valid_ids_freq2 = {} #updated at search_id()
 	vid_length_sec = vid_specs[2]
-	vid_time_cnt = vid_specs[0] * vid_length_sec // 2  # fps * length_of_video
+	fps = vid_specs[0]
+	vid_time_cnt = fps * vid_length_sec #fps * length_of_video = total number of frames
 	id_dimension = id_card_specs['dimension']
 	
-	#needed in deskew()  (called it here to save thousands of calls to db in while loop)
+	if testing_mode == True : #TESTING
+		print(enable_multithreading(12))
+	
+	#needed in deskew()  (pre-allocate it 'one-time' saves huge overhead)
 	ref_img = get_ref_img_db()
 	ref_img = cv2.UMat(ref_img)
  
+	# #4 copies moved outside loop will be used as buffer to stor org image copy UMat (may not need)
+	# full_shape = (*id_dimension , 3)
+	# umat_container = [np.zeros(full_shape, dtype=np.uint8)]*4
+	#BTW this is only way i know to copy UMat to UMat 
+	
+
+	no_error , frame =  vid.read() #pre-allocate frame to save some overhead
+	frame_shape = frame.shape[:2]
 	while vid_time_cnt > 0: #start capture camera for vid_length_sec 
 
+		if testing_mode == True :#TESTING
+			start_time = time.time()
+   
 		no_error , frame =  vid.read()
+		frame = cv2.UMat(frame)
+		
 		
 
 		if  not no_error :
 			print(f"""
 			warninig!: could not read this frame : {vid_time_cnt} 
-   		skipping to next frame>> """)
+			skipping to next frame>> """)
 			vid_time_cnt -= 1
 			continue
 			# return False , "Fail error reading frame" #Fetal Fail error reading frame
-  
-		img_final_deskew , img_final_no_deskew = proccess_vid_frame(frame , _id_dimension= id_dimension , _is_valid = is_valid ,  _is_valid2 = is_valid2 , _ref_img= ref_img)
-  
-		if type(img_final_deskew) == type(-1) : #skip this frame
-			print(f"""
-			warninig!: this frame : {vid_time_cnt} will be skipped from ocr and id db check  
 
-			due to cv2 unable to generate  homopraghy transformation mat""")
+
+		img_final_deskew , img_final_no_deskew , skip = proccess_vid_frame(frame , _id_dimension= id_dimension , _is_valid = is_valid ,  _is_valid2 = is_valid2 , _ref_img = ref_img , frame_shape = frame_shape , count= vid_time_cnt )
+
+
+		if type(img_final_deskew) == type( False ) or type(img_final_no_deskew) == type( False ) : #skip this frame for speed or err handle
+     
+			print
+			(
+      	f"""
+			warninig!: this frame : {vid_time_cnt} will be skipped from ocr and id db check  
+			due to cv2 unable to generate  homopraghy transformation mat
+			"""
+			)
+   
 			vid_time_cnt -= 1
 			continue
 
 		#custom tesser configuration if needed
-		cfg = "--psm 11 --oem 3" # Sparse text. Find as much text as possible in no particular order.
+		cfg  = "--psm 11 --oem 3" # Sparse text. Find as much text as possible in no particular order.
 		cfg2 = "--psm 12 --oem 3" # Sparse text with osd. Find as much text as possible in no particular order.
   
-		imgstr  = tsr.image_to_string(img_final_deskew, lang='eng' , config= cfg)
-		imgstr2 = tsr.image_to_string(img_final_no_deskew, lang='eng')
+		#prepare imgs for tesseract and pass them
+		if testing_mode == True :
+			print( f"type img_final_deskew before cvt to mat: {type(img_final_deskew)}")
+			print( f"type img_final_no_deskew before cvt to mat: {type(img_final_no_deskew)}")
+
+		img_final_deskew = img_final_deskew.get()
+		img_final_no_deskew = img_final_no_deskew.get()
+		imgstr  = tsr.image_to_string(img_final_deskew , lang='eng' , config= cfg)
+		imgstr2 = tsr.image_to_string(img_final_no_deskew , lang='eng')
 	
 		#search id in rotated and non rotated images
-		is_valid  , *_   = search_id ( id_card_specs['id_char'] , scanned_image= imgstr , valid_ids_freq= valid_ids_freq) #edits valid_ids_freq inside
-		is_valid2 , *_  = search_id ( id_card_specs['id_char'] , scanned_image= imgstr2 , valid_ids_freq= valid_ids_freq2) #edits valid_ids_freq inside
+		is_valid  , *_ = search_id ( id_card_specs['id_char'] , scanned_image= imgstr  , valid_ids_freq= valid_ids_freq) #edits valid_ids_freq inside
+		is_valid2 , *_ = search_id ( id_card_specs['id_char'] , scanned_image= imgstr2 , valid_ids_freq= valid_ids_freq2) #edits valid_ids_freq inside
   
 		if is_valid : valid_cnt += 1
 			#render a green rectangle + must stay green for one second
@@ -613,7 +694,6 @@ def read_simple_card_opencl( vid : cv2.VideoCapture , vid_specs : list , id_card
 			print ( 'valid counter  : ' , valid_cnt)#TESTING 
 			print ( 'valid counter2 :' , valid_cnt2)#TESTING 
 
-		fps = vid_specs[0]
 		vid_time_cnt -= 1
 		n = 1
 		validate_after = n * fps  #after n sec
@@ -639,20 +719,34 @@ def read_simple_card_opencl( vid : cv2.VideoCapture , vid_specs : list , id_card
 		if testing_mode == True :
 			print ( 'valid counter not_deskewed ' , valid_cnt)#TESTING 
 
-		
 		frametime = vid_specs[1]
-		cv2.waitKey( frametime )  
   
-	max_skewed = max ( valid_ids_freq ,  key= valid_ids_freq.get )
+		if testing_mode == True :#TESTING
+			end_time = time.time()
+			actual_frametime = end_time - start_time
+			actual_fps = 1 / actual_frametime
+			max_rec_frametime_min_fps[0] =  max (max_rec_frametime_min_fps[0] , actual_frametime)
+			max_rec_frametime_min_fps[1] =  min (max_rec_frametime_min_fps[1] , actual_fps)
+			min_rec_frametime_max_fps[0] =  min (max_rec_frametime_min_fps[0] , actual_frametime)
+			min_rec_frametime_max_fps[1] =  max (max_rec_frametime_min_fps[1] , actual_fps)
+			print(f"#### actual Frametime(sec) and FPS: {actual_frametime} , {actual_fps} ####")
+			print(f"#### TARGET frametime and fps (sec) {frametime / 1000} , {fps} ####")
+   
+		cv2.waitKey( frametime )  
+	
+	max_skewed , max_un_skewed = -1 , -1
+	if len(valid_ids_freq) != 0 :
+		max_skewed = max ( valid_ids_freq ,  key= valid_ids_freq.get )
  
-	max_un_skewed = max ( valid_ids_freq2 ,  key= valid_ids_freq2.get )
+	if len(valid_ids_freq2) != 0 :
+		max_un_skewed = max ( valid_ids_freq2 ,  key= valid_ids_freq2.get )
  
 	return False , max(max_skewed , max_un_skewed)  #fail but return best guess
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
 
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
 
-def save_ref_img_db (): #only use manually
+def save_ref_img_db ( name : str = "ref_rot_img"): #only use manually
 
 	#Apply same operations that made to image before calling deskew()
 	img_path = r"clear.jpg"
@@ -670,19 +764,19 @@ def save_ref_img_db (): #only use manually
   
 	else:
 		#send to db
-		db.access_img_table( 1 , img_to_write= ref_img_encoded )
+		db.access_img_table( 1 , img_to_write= ref_img_encoded , img_name= name )
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
 def get_ref_img_db(img_name : str = "ref_rot_img") -> np.ndarray :
 
 	original = "original" #the original id card made in paint3d
-	ref_img_encoded =  db.access_img_table( 0 )
+	ref_img_encoded =  db.access_img_table( 0 ,img_name= img_name )
 	ref_img = cv2.imdecode( np.frombuffer(ref_img_encoded , dtype= np.uint8 , ) , cv2.IMREAD_GRAYSCALE)
  
 	return ref_img
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
  
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
-def ocr_main (id_dimension : tuple = (810 , 542) , id_type_indx : int = 0 ) -> str : 
+def ocr_main (id_dimension : tuple = (450 , 316) , id_type_indx : int = 0 ) -> str : 
 	"""
 	* this function does following (until now):
 
@@ -693,21 +787,21 @@ def ocr_main (id_dimension : tuple = (810 , 542) , id_type_indx : int = 0 ) -> s
 		2. provide rectangle at video center to help user scan id 
   			+ timer 
 	
-		4. proccess taken frame for better ocr ( threshold , smooth , 
-  			dialate/erode , deskew(soon)) 
+		4. proccess taken frame for better ocr ( Inverte , Threshhold , deskew , sharpen
+  			dialate/erode) 
 
-		5. ocr 
+		5. ocr ( 2 frames : rotated and not rotated one)
 
-		6. parse the text to take only id for now ( 14numeric digits )
+		6. parse the text to take only id for now ( 14 numeric digits as default )
 
-		3. save valid id after 1sec or stop cam after 10sec of 
-  			invalid ids scan
+		3. apply tolerance layers  to determine either to accept read id or not 
+  		(perfect match / not perfect match  / failed but send best guess)
 	
 
 		7. return the ocr(ed) ID card number
 
-	* Default id shape is : ( 810 x 542 ) (x,y) (later this will ocr car plates and license)
-		actual size of our test id card image is 800 x 532
+	* Default id shape is : ( 450 x 316 ) (x,y) (later this will ocr car plates and license)
+		actual size of our test id card image is 400 x 266
 		 id_type_inx -> default id == 0 , lisence id  == 1  , car plate id == 2
 
 ---
@@ -748,7 +842,7 @@ def ocr_main (id_dimension : tuple = (810 , 542) , id_type_indx : int = 0 ) -> s
 
 
 	final_value = None 
-	vid, *vid_specs = video_settings_setup(vid_length_sec= 30)
+	vid, *vid_specs = video_settings_setup(vid_length_sec= 100)
 	active_gpu_api = vid_specs[3]
 
 	if active_gpu_api == 1 : #Cuda
@@ -768,8 +862,11 @@ def ocr_main (id_dimension : tuple = (810 , 542) , id_type_indx : int = 0 ) -> s
 
 	vid.release()
 	cv2.destroyAllWindows()
+ 
 
 	if testing_mode == True :
+		print(f" highest recorded frametime  (sec) , lowest  fps  : {max_rec_frametime_min_fps}")
+		print(f" lowest  recorded frametime  (sec) , highest fps  : {min_rec_frametime_max_fps}")
 		print ("did we found correct id ? " , final_status)#TESTING
  
 	if final_status : 
@@ -781,6 +878,13 @@ def ocr_main (id_dimension : tuple = (810 , 542) , id_type_indx : int = 0 ) -> s
 
 if __name__ == "__main__": 
 	#test your code 
-
+	
+	#test ocr 
 	testing_mode = True
-	print(f" YOUR OCR FINAL OUTPUT IS : {ocr_main()}")
+	max_rec_frametime_min_fps =  [-1 , 1000]
+	min_rec_frametime_max_fps =  [10000 , -1]
+	print(f" YOUR OCR FINAL OUTPUT (ID , op_status) : {ocr_main()}")
+	
+	#save imgs to db for first time after rebuilding db
+	# save_ref_img_db (name= "ref_rot_img")
+	# save_ref_img_db (name= "original")
