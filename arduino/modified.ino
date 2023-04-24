@@ -33,7 +33,7 @@ void loop()
     int park_n=Serial.read();
     // 1,2,3 for the 1st floor and 4,5,6 for 2nd floor, and so on
     
-    if(parking_order==1)
+    if(parking_order=='1')
     {
       while(!Serial.available()) {}
       int next_park_n=Serial.read();
@@ -53,7 +53,7 @@ void parking(int x,int y)
   {
     flag=1;
     parking(without_platform_n , x);    
-  }  
+  }
   int coef=4; // or may be changed
   //let number of rotations to translate 1 floor(20 cm) is 4 rotations
   // 1 rotation = 5cm = 2*pi*r
