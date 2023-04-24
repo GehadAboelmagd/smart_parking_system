@@ -732,8 +732,8 @@ def read_simple_card_opencl( vid : cv2.VideoCapture , vid_specs : list , id_card
 			print(f"#### actual Frametime(sec) and FPS: {actual_frametime} , {actual_fps} ####")
 			print(f"#### TARGET frametime and fps (sec) {frametime / 1000} , {fps} ####")
    
-			cv2.waitKey( frametime )
-
+		cv2.waitKey( frametime )  
+	
 	max_skewed , max_un_skewed = -1 , -1
 	if len(valid_ids_freq) != 0 :
 		max_skewed = max ( valid_ids_freq ,  key= valid_ids_freq.get )
