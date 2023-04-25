@@ -8,6 +8,8 @@
 """
 import sqlite3
 import numpy as np
+import datetime
+import time
 import math
 
 
@@ -401,10 +403,10 @@ def db_cmd(cmd: int, id: str):
 
 
 ###########################################################################
-if __name__ == "__main__":...
+if __name__ == "__main__":
     # TEST YOUR CODE
 
-   #  build_db()  # build the sqlite3 db for fist time ( IF BUILT BEFORE SQLITE3 ERROR WILL BE raised )
+    build_db()  # build the sqlite3 db for fist time ( IF BUILT BEFORE SQLITE3 ERROR WILL BE raised )
 
 #  #Example: park new car with driver id = 54302518496307
 #  db_cmd(0, str(54302518496307))
