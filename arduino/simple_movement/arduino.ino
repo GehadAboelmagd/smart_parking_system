@@ -112,3 +112,60 @@ void reverse_parking(int x)
   Serial.write('D');
   Serial.flush();
 }
+
+
+void up_draw_down(int x)
+{
+  int i = (x-1)/3 +1;
+  int j = (x-1)%3;
+  motor_1.step((floor_step[i]+floor_step[i-1])/2 ,FORWARD,SINGLE);    delay(1000);
+  motor_2.step(park_step[j],FORWARD,SINGLE);                          delay(1000);
+  motor_1.step((floor_step[i+1]-floor_step[i-1])/2 ,FORWARD,SINGLE);  delay(1000);
+  motor_2.step(park_step[j],BACKWARD,SINGLE);                         delay(1000);
+  motor_1.step((floor_step[i+1]+floor_step[i])/2 ,BACKWARD,SINGLE);   delay(1000);
+}
+
+
+
+void up_park_draw_down(int x, int y)
+{
+  //park variable(x) and draw variable(y)
+  
+  int i = (x-1)/3 +1;   int j = (x-1)%3;
+  int m = (y-1)/3 +1;   int n = (y-1)%3;  
+  
+  motor_1.step((floor_step[i+1]+floor_step[i])/2 ,FORWARD,SINGLE);    delay(1000);
+  motor_2.step(park_step[j],FORWARD,SINGLE);                          delay(1000);
+  motor_1.step((floor_step[i+1]-floor_step[i-1])/2 ,BACKWARD,SINGLE); delay(1000);
+  //now the unwanted platform is parked and the fork is under without_platform_n
+  
+  if(i==m) //the same floor
+  {
+    if(n>j)
+    motor_2.step(park_step[n]-park_step[j] ,FORWARD,SINGLE);
+    else if (n<j)
+    motor_2.step(park_step[j]-park_step[n] ,BACKWARD,SINGLE);
+    delay(1000);
+  }
+
+  else //(i!=m)
+  {
+    motor_2.step(park_step[j],BACKWARD,SINGLE);                       
+    delay(1000);
+    
+    if (m>i)
+    motor_1.step(( floor_step[m]+floor_step[m-1]-floor_step[i]-floor_step[i-1] )/2 ,FORWARD,SINGLE);
+    else  //(m<i)
+    motor_1.step(( floor_step[i]+floor_step[i-1]-floor_step[m]-floor_step[m-1] )/2 ,BACKWARD,SINGLE);
+    delay(1000);
+    
+    motor_2.step(park_step[n],FORWARD,SINGLE);  
+    delay(1000);
+  }
+
+  //now the fork is under the wanted platform
+
+  motor_1.step((floor_step[m+1]-floor_step[m-1])/2 ,FORWARD,SINGLE);  delay(1000);
+  motor_2.step(park_step[n],BACKWARD,SINGLE);                         delay(1000);
+  motor_1.step((floor_step[m+1]+floor_step[m])/2 ,BACKWARD,SINGLE);   delay(1000);
+}
