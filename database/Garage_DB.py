@@ -13,6 +13,9 @@ import time
 import math
 
 
+# TODO : alter tables structure depending on latest ER.png on repo
+# TODO : make check_hashed_password() and is_park_full() functions
+# TODO : edit whats needed in db_cmd() [new arg for password + edit body]
 # TODO : Add gmail extension  via : smtp or  yagmail or pygmail python libraries ( ask chat gpt and look your old gmail api to know more)
 # TODO : Enhance error handling  and bug testing
 ###########################################################################
@@ -353,9 +356,7 @@ def db_check_ai_id(id_to_chk: str) -> bool:  # NOTE : still not tested
 
     return is_found
 ###########################################################################
-
-
-def access_img_table(readOrwrite: bool, img_to_write: np.ndarray = None, img_name: str = "ref_rot_img"):
+def access_img_table(readOrwrite: bool, img_to_write: np.ndarray = None, img_name: str = "ref_rot_img" , ref_id_val : str = '54302518496307' ):
     """
     *  readOrwrite == 0 ->read img 
     *  readOrwrite == 1 ->write img
@@ -369,9 +370,9 @@ def access_img_table(readOrwrite: bool, img_to_write: np.ndarray = None, img_nam
         if readOrwrite == 1:  # write
             encoded_img = img_to_write
             cursor.execute(
-                """INSERT INTO reference_images  (img_name , img_data) 
-                   VALUES (?,?);
-                """, (img_name, encoded_img)
+                """INSERT INTO reference_images  (img_name , img_data , Extracted_id) 
+                   VALUES (?,? ,?);
+                """, (img_name, encoded_img , ref_id_val)
             )
             db.commit()
 
