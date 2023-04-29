@@ -85,7 +85,7 @@ def park_button():
     ocr_cv.max_rec_frametime_min_fps = [-1, 1000]
     ocr_cv.min_rec_frametime_max_fps = [10000, -1]
     id = ocr_cv.ocr_main()
-    # id = (0,True) -> test
+    #id = (0,True)
 
     user_info['id']=id[0]
 
