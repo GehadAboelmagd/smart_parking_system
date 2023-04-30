@@ -32,10 +32,3 @@ def getcar(park_n):
     # print('done')
     ser.close()
 
-# test function
-<<<<<<< HEAD
-putcar(2)
-=======
-putcar(2 , 2)
->>>>>>> bf5124d308c56d413f4bdb8b3e3a10c6788b8cea
-getcar(2)
