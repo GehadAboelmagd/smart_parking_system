@@ -14,7 +14,7 @@ import math
 
 
 # TODO : alter tables structure depending on latest ER.png on repo
-# TODO : make check_hashed_password() and is_park_full() functions
+# TODO : make check_hashed_password() and is_full() functions
 # TODO : edit whats needed in db_cmd() [new arg for password + edit body]
 # TODO : Add gmail extension  via : smtp or  yagmail or pygmail python libraries ( ask chat gpt and look your old gmail api to know more)
 # TODO : Enhance error handling  and bug testing
@@ -227,7 +227,7 @@ def calc_cost(person_id: str, conn):
 ###########################################################################
 
 def park_car_db(conn, cmd, id):
-    '''park car command to UPDATE database   return : park_cell_no , cost_le , tot_park_time_hour'''
+    '''park car command to UPDATE database   return : park_cell_no '''
 
     cursor = conn.cursor()
     # check if parking is full return parking full err (from available table)
@@ -240,7 +240,7 @@ def park_car_db(conn, cmd, id):
     if available_cells == 0:
         conn.close()
         print(" debug message : Fail parking is full!\n")
-        return 0  # 0 == fail park is full
+        return -1  # -1 == fail park is full
     else:
         # take id  and get all data FROM people_info table ( NO NEED FOR NOW)
         query_personal_data = '''SELECT * FROM people_info WHERE id = ?; '''
@@ -307,7 +307,7 @@ def get_car_db(conn, cmd, id):
     if status != 1:
         conn.close()
         print("debug message : FAIL car not found!\n")
-        return 0  # fail car not found err
+        return -1 , -1 , -1  # fail car not found err
     else:
         # get all personal data FROM personal data table by id ( NO NEED FOR NOW)
         cursor.execute(""" SELECT * FROM people_info WHERE id = ?;""", (id,))
@@ -386,13 +386,26 @@ def access_img_table(readOrwrite: bool, img_to_write: np.ndarray = None, img_nam
 
 ###########################################################################
 
-def db_cmd(cmd: int, id: str):
-    ''' this is the main database fucntion and what other parts of code will see and use 99% of time '''
+def db_cmd(cmd: int, id: str , temp_password : str = None  ):
+    ''' this is the main database fucntion and what other parts of code will see and use 99% of time 
+    cmd == 0 => park car
+    cmd == 1 => get car
+    cmd == 2 => is_full?
+    
+    Returns:
+    if cmd == 0 => cell_id or -1 if full
+    if cmd == 1 => (cell_id , is_pass_ok , cost_le , time_hour) or (-1 , False , -1 , -1) if fail
+    if cmd == 2 => True or False 
+    '''
+    
     conn = connect_db()
     if cmd == 0:  # park car command
         return park_car_db(conn, cmd, id)
     elif cmd == 1:  # get car FROM park command ( free a cell )
         return get_car_db(conn, cmd, id)
+    elif cmd == 2 : #is_full() 
+       #TODO#
+        ...
 
 
 ###########################################################################
