@@ -1,21 +1,21 @@
 """
-								  Coder : ENG.Omar | Eng.Asmaa
-								  Version : v1.0B
-								  version Date :  19 / 4 / 2023
-								  Code Type : python | SQLite database=> smart_parking_project
-								  Title : Smart Parking System
-								  Interpreter : cPython  v3.11.0 [Compiler : MSC v.1933 AMD64]
+                          Coder : ENG.Omar | Eng.Asmaa
+                          Version : v1.0B
+                          version Date :  19 / 4 / 2023
+                          Code Type : python | SQLite database=> smart_parking_project
+                          Title : Smart Parking System
+                          Interpreter : cPython  v3.11.0 [Compiler : MSC v.1933 AMD64]
 """
 import sqlite3
 import numpy as np
 import datetime
 import time
 import math
+import os , sys
+import random 
+import string
 
 
-# TODO : alter tables structure depending on latest ER.png on repo
-# TODO : make check_hashed_password() and is_full() functions
-# TODO : edit whats needed in db_cmd() [new arg for password + edit body]
 # TODO : Add gmail extension  via : smtp or  yagmail or pygmail python libraries ( ask chat gpt and look your old gmail api to know more)
 # TODO : Enhance error handling  and bug testing
 ###########################################################################
@@ -51,7 +51,8 @@ def create_db(conn):
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         car_model TEXT,
-        license_exp_date DATE
+        license_exp_date DATE,
+        Gmail TEXT
         );
         """
     )
@@ -65,6 +66,7 @@ def create_db(conn):
         event_type INTEGER NOt NULL,
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP NOT  NULL,
         cost INTEGER ,
+        password_ TEXT,
         FOREIGN KEY (person_id) REFERENCES people_info(id)
         );
         """
@@ -95,51 +97,51 @@ def create_db(conn):
     # table 5 id reference image for CV operations
     cursor.execute(
         """
-	CREATE TABLE IF NOT EXISTS reference_images (
-		ref_id  INTEGER PRIMARY KEY AUTOINCREMENT ,
-		img_name TEXT UNIQUE,
-		img_data BLOB,
-		Extracted_id TEXT,
-		FOREIGN KEY (Extracted_id) REFERENCES people_info(id)
-	);
-	"""
+   CREATE TABLE IF NOT EXISTS reference_images (
+      ref_id  INTEGER PRIMARY KEY AUTOINCREMENT ,
+      img_name TEXT UNIQUE,
+      img_data BLOB,
+      Extracted_id TEXT,
+      FOREIGN KEY (Extracted_id) REFERENCES people_info(id)
+   );
+   """
     )
 
 # 30 test sample of non real people info ( 1st two records is expired and about to expire license for later use)
     cursor.execute(
         """
-        INSERT INTO people_info (id, name, car_model , license_exp_date)
+        INSERT INTO people_info (id, name, car_model , license_exp_date , Gmail)
         VALUES
-      ('51483525410590', 'Ahmed Ali', 'Toyota Camry 2010', '2022-12-31'),
-      ('94327645058732', 'Fatima Ahmed', 'Nissan Altima 2014', '2024-04-31'),
-      ('54302518496307', 'Abdullah Hassan', 'Honda Accord 2016', '2024-06-30'),
-      ('69301847590631', 'Sara Khalid', 'BMW 750i 2015', '2025-05-31'),
-      ('57392618347590', 'Hassan Mohammad', 'Mercedes S-Class 2017', '2025-11-30'),
-      ('43768403502931', 'Nada Abdullah', 'Audi A6 2018', '2026-08-31'),
-      ('11111111111111', 'Omar Rashad', 'Rolls-Royce dawn 2022', '2027-05-13'),
-      ('82154763902174', 'Aisha Khalil', 'Porsche 911 2020', '2028-04-30'),
-      ('38574820856990', 'Khaled Hassan', 'Toyota RAV4 2021', '2029-09-30'),
-      ('12092547103826', 'Noor Ahmed', 'Honda Civic 2022', '2030-03-31'),
-      ('48930257301924', 'Yara Khalid', 'Nissan Maxima 2013', '2022-07-31'),
-      ('90584058237584', 'Ali Hassan', 'Toyota Corolla 2017', '2023-05-31'),
-      ('76587430965402', 'Mariam Ahmed', 'BMW X5 2016', '2024-02-29'),
-      ('59482143698237', 'Ahmed Khalid', 'Mercedes E-Class 2018', '2025-07-31'),
-      ('10756736490582', 'Hassan Ali', 'Audi Q5 2019', '2026-05-31'),
-      ('84263049387356', 'Sara Abdullah', 'Tesla Model Y 2020', '2027-11-30'),
-      ('17593745068247', 'Nora Saad', 'Porsche Panamera 2015', '2028-10-31'),
-      ('23570968430879', 'Abdul Rahman Salam', 'Honda CR-V 2014', '2029-12-31'),
-      ('20968472036847', 'Lina Khalid', 'Toyota Camry 2011', '2030-09-30'),
-      ('82095736204839', 'Yusuf Ali', 'Nissan Altima 2012', '2031-07-31'),
-      ('94375029830610', 'Hassan Abdullah', 'Tesla Model Y 2020', '2027-11-30'),
-      ('29578406135029', 'Sara Saad', 'Porsche Panamera 2015', '2028-10-31'),
-      ('50983740125674', 'Abdul Rahman Ali', 'Honda CR-V 2014', '2029-12-31'),
-      ('98406270356408', 'Somaia Khalid', 'Toyota Camry 2011', '2030-09-30'),
-      ('62970315483745', 'Fatima Ali', 'Nissan Altima 2012', '2031-07-31'),
-      ('41098726395820', 'Yusuf Khalid', 'Honda Accord 2016', '2022-08-31'),
-      ('95673402567849', 'Saif Hassan', 'Honda Accord 2016', '2022-08-31'),
-      ('94368209865439', 'Saad Khalid', 'BMW 740i 2018', '2023-06-30'),
-      ('84759370289347', 'Ali Abdullah', 'Toyota Corolla 2017', '2024-05-31'),
-      ('58943270598347', 'Nada Khalid', 'Nissan Altima 2015', '2025-10-31');
+      ('51483525410590', 'Ahmed Ali', 'Toyota Camry 2010', '2022-12-31', 'hjeklpyf@gmail.com'),
+      ('94327645058732', 'Fatima Ahmed', 'Nissan Altima 2014', '2024-04-31', 'yqgtrmfa@gmail.com'),
+      ('54302518496307', 'Abdullah Hassan', 'Honda Accord 2016', '2024-06-30', 'system.python.web@gmail.com'),
+      ('69301847590631', 'Sara Khalid', 'BMW 750i 2015', '2025-05-31', 'yjukrpzt@gmail.com'),
+      ('57392618347590', 'Hassan Mohammad', 'Mercedes S-Class 2017', '2025-11-30', 'gxzqywcn@gmail.com'),
+      ('43768403502931', 'Nada Abdullah', 'Audi A6 2018', '2026-08-31', 'kcdnefzo@gmail.com'),
+      ('11111111111111', 'Omar Rashad', 'Rolls-Royce dawn 2022', '2027-05-13', 'omar33xd@gmail.com'),
+      ('82154763902174', 'Aisha Khalil', 'Porsche 911 2020', '2028-04-30', 'pqzynuwm@gmail.com'),
+      ('38574820856990', 'Khaled Hassan', 'Toyota RAV4 2021', '2029-09-30', 'fymrvzne@gmail.com'),
+      ('12092547103826', 'Noor Ahmed', 'Honda Civic 2022', '2030-03-31', 'dhtzjybe@gmail.com'),
+      ('48930257301924', 'Yara Khalid', 'Nissan Maxima 2013', '2022-07-31', 'vxytqjna@gmail.com'),
+      ('90584058237584', 'Ali Hassan', 'Toyota Corolla 2017', '2023-05-31', 'ongjhtdm@gmail.com'),
+      ('76587430965402', 'Mariam Ahmed', 'BMW X5 2016', '2024-02-29', 'qjywxibt@gmail.com'),
+      ('59482143698237', 'Ahmed Khalid', 'Mercedes E-Class 2018', '2025-07-31', 'cmgivrat@gmail.com'),
+      ('10756736490582', 'Hassan Ali', 'Audi Q5 2019', '2026-05-31', 'zgxtqndm@gmail.com'),
+      ('84263049387356', 'Sara Abdullah', 'Tesla Model Y 2020', '2027-11-30', 'nxvrluag@gmail.com'),
+      ('17593745068247', 'Nora Saad', 'Porsche Panamera 2015', '2028-10-31', 'tuzpjydr@gmail.com'),
+      ('23570968430879', 'Abdul Rahman Salam', 'Honda CR-V 2014', '2029-12-31', 'qgwmvhey@gmail.com'),
+      ('20968472036847', 'Lina Khalid', 'Toyota Camry 2011', '2030-09-30', 'mzydjrnh@gmail.com'),
+      ('82095736204839', 'Yusuf Ali', 'Nissan Altima 2012', '2031-07-31', 'wzfqyujc@gmail.com'),
+      ('94375029830610', 'Hassan Abdullah', 'Tesla Model Y 2020', '2027-11-30', 'kqjzatoh@gmail.com'),
+      ('29578406135029', 'Sara Saad', 'Porsche Panamera 2015', '2028-10-31', 'zjgulyfm@gmail.com'),
+      ('50983740125674', 'Abdul Rahman Ali', 'Honda CR-V 2014', '2029-12-31', 'apfbsqkx@gmail.com'),
+      ('98406270356408', 'Somaia Khalid', 'Toyota Camry 2011', '2030-09-30', 'hjyqmcab@gmail.com'),
+      ('62970315483745', 'Fatima Ali', 'Nissan Altima 2012', '2031-07-31', 'tkpiaxjb@gmail.com'),
+      ('41098726395820', 'Yusuf Khalid', 'Honda Accord 2016', '2022-08-31', 'xvukqjrg@gmail.com'),
+      ('95673402567849', 'Saif Hassan', 'Honda Accord 2016', '2022-08-31', 'fblgqmyi@gmail.com'),
+      ('94368209865439', 'Saad Khalid', 'BMW 740i 2018', '2023-06-30', 'fzglqhvn@gmail.com'),
+      ('84759370289347', 'Ali Abdullah', 'Toyota Corolla 2017', '2024-05-31', 'yiqkujrg@gmail.com'),
+      ('58943270598347', 'Nada Khalid', 'Nissan Altima 2015', '2025-10-31', 'ohxgnspl@gmail.com');
             """
     )
     conn.commit()  # some statements need commit / but we enabled auto commit
@@ -167,14 +169,63 @@ def build_db():  # only once to create database
     ''' call This function whenever you establish new Db only once to build your db structure '''
 
     conn = connect_db()
-    # inside create_db() will make the 4 main tables
-    # -> people_info , parking_status , event_log , total_available
+    # inside create_db() will make the 5 main tables
+    # -> people_info , parking_status , event_log , total_available , reference_image
     create_db(conn)
 
+##########################################################################
+def is_full() :
+   
+   with connect_db() as conn:
+      cursor = conn.cursor()
+      # check if parking is full return parking full err (from available table)
+      # we could use select sum() instead also )
+      car_counter_query = (
+         """ SELECT COUNT(status) FROM parking_status WHERE  status = 0; """)
+      cursor.execute(car_counter_query)
+      available_cells = (cursor.fetchall())[0][0]
+
+      if available_cells == 0:
+         conn.close()
+         print(" debug message : Fail parking is full!\n")
+         return False  # fail park is full
+      else:
+         return True
 
 ###########################################################################
+def disable_rand_hash_seed() -> 'str': 
+   """
+   -> WARNING THIS FUNCTION MAY CHANGE BUILT-IN 'hash()' *permenentally!!!* \n
+   -> This function makes built-in hash() works as expected \n
+      i.e. ( for same input only = same hashed output ) at any session \n
+   -> so basically is makes PYTHONHASHSEDD = '0' to make it constant seed not random. \n
+   """
+   hashseed = os.getenv('PYTHONHASHSEED')
+   if not hashseed:
+      os.environ['PYTHONHASHSEED'] = '0'
+      os.execv(sys.executable, [sys.executable] + sys.argv)
+   return  hashseed
 
-def calc_cost(person_id: str, conn):
+###########################################################################
+def validate_pass(pass_to_check : str , id) -> bool :
+   
+   disable_rand_hash_seed()
+   pass_to_check = str(hash(pass_to_check))
+   
+   cursor.execute(
+        """
+        SELECT  password_ FROM event_log WHERE person_id = ? AND event_type = 0
+        ORDER BY event_id DESC;
+        """, (id,))
+   saved_pass= (cursor.fetchall())[0]
+   
+   if saved_pass == pass_to_check :
+      return True
+   else :
+      return False
+   
+###########################################################################
+def calc_cost(person_id: str, conn : sqlite3.Connection ):
     """
      get diffrence between parking time and free cell time then mul with cost per hour
     return :
@@ -226,7 +277,7 @@ def calc_cost(person_id: str, conn):
 
 ###########################################################################
 
-def park_car_db(conn, cmd, id):
+def park_car_db(conn, cmd, id , temp_pass : str):
     '''park car command to UPDATE database   return : park_cell_no '''
 
     cursor = conn.cursor()
@@ -250,10 +301,16 @@ def park_car_db(conn, cmd, id):
         # take all persons data and add new event in events log table ( event type : occupy parking cell)
         event_type = cmd
         person_id = id
+        
+        #Hash the pass for security before saving in db   
+        disable_rand_hash_seed()
+        pass_hashed = str(hash(temp_pass))
+        del temp_pass
+
         cursor.execute("""
-INSERT into event_log (person_id , event_type ) VALUES
-(? , ?);
-""", (person_id, event_type))
+INSERT into event_log (person_id , event_type , password_ ) VALUES
+(? , ? , ?);
+""", (person_id, event_type , pass_hashed ))
         conn.commit()
 
         # UPDATE parking status table ( take the nearist available parking) and UPDATE total available table
@@ -284,7 +341,7 @@ INSERT into event_log (person_id , event_type ) VALUES
 ###########################################################################
 
 
-def get_car_db(conn, cmd, id):
+def get_car_db(conn, cmd, id , pass_to_check : str ):
     """
     get car FROM parking command ( free a cell in db )
     Args:
@@ -293,6 +350,7 @@ def get_car_db(conn, cmd, id):
     id : person_id  to get his car
     Return :
     cell_number : for arduino to move motors
+    is_valid_pass : check given password
     tot_cost_le : cost in le
     tot_time_hour : parking time
     """
@@ -307,28 +365,35 @@ def get_car_db(conn, cmd, id):
     if status != 1:
         conn.close()
         print("debug message : FAIL car not found!\n")
-        return -1 , -1 , -1  # fail car not found err
+        return -1, -1, -1  # fail car not found err
+     
     else:
-        # get all personal data FROM personal data table by id ( NO NEED FOR NOW)
-        cursor.execute(""" SELECT * FROM people_info WHERE id = ?;""", (id,))
-        person_data = cursor.fetchall()  # id, name, car_model, license_exp_date
+        if validate_pass(pass_to_check , id) == True :
+            del pass_to_check
+            
+            # get all personal data FROM personal data table by id ( NO NEED FOR NOW)
+            cursor.execute(""" SELECT * FROM people_info WHERE id = ?;""", (id,))
+            person_data = cursor.fetchall()  # id, name, car_model, license_exp_date
+            
+         
+            # register new event in event log table with data you got (event type = free parking cell )
+            cursor.execute(""" INSERT into event_log (person_id , event_type)
+            VALUES(? , ?);
+            """, (id, cmd))
+            conn.commit()
 
-        # register new event in event log table with data you got (event type = free parking cell )
-        cursor.execute(""" INSERT into event_log (person_id , event_type)
-	VALUES(? , ?);
-	""", (id, cmd))
-        conn.commit()
+            # UPDATE parking status table
+            cursor.execute(
+                  """ UPDATE parking_status SET status = 0 , taken_by = NULL WHERE taken_by = ? ;""", (id,))
+            conn.commit()
 
-        # UPDATE parking status table
-        cursor.execute(
-            """ UPDATE parking_status SET status = 0 , taken_by = NULL WHERE taken_by = ? ;""", (id,))
-        conn.commit()
-
-        # conn.close() will be in calc_cost() function
-        # return parking cell number + park cost info
-        print("debug message : SUCCESS Database has been CHANGED!\n")
-        # change to list [] if you want to easy overwrite
-        return (cell_data[0], *calc_cost(id, conn))
+            # conn.close() will be in calc_cost() function
+            # return parking cell number + park cost info
+            print("debug message : SUCCESS Database has been CHANGED!\n")
+            # change to list [] if you want to easy overwrite
+            return (cell_data[0], True , *calc_cost(id, conn))
+        else :
+           return -1 , False , -1 , -1 #FAIL PASSWORD DONT MATCH
 
 
 ###########################################################################
@@ -346,8 +411,8 @@ def db_check_ai_id(id_to_chk: str) -> bool:  # NOTE : still not tested
     with connect_db() as db:
         cursor = db.cursor()
         cursor.execute(""" 	SELECT id FROM people_info 
-									WHERE id = ?;
-							""", (id_to_chk,))
+                           WHERE id = ?;
+                     """, (id_to_chk,))
 
         temp = cursor.fetchall()
 
@@ -356,7 +421,9 @@ def db_check_ai_id(id_to_chk: str) -> bool:  # NOTE : still not tested
 
     return is_found
 ###########################################################################
-def access_img_table(readOrwrite: bool, img_to_write: np.ndarray = None, img_name: str = "ref_rot_img" , ref_id_val : str = '54302518496307' ):
+
+
+def access_img_table(readOrwrite: bool, img_to_write: np.ndarray = None, img_name: str = "ref_rot_img", ref_id_val: str = '54302518496307'):
     """
     *  readOrwrite == 0 ->read img 
     *  readOrwrite == 1 ->write img
@@ -372,7 +439,7 @@ def access_img_table(readOrwrite: bool, img_to_write: np.ndarray = None, img_nam
             cursor.execute(
                 """INSERT INTO reference_images  (img_name , img_data , Extracted_id) 
                    VALUES (?,? ,?);
-                """, (img_name, encoded_img , ref_id_val)
+                """, (img_name, encoded_img, ref_id_val)
             )
             db.commit()
 
@@ -384,28 +451,27 @@ def access_img_table(readOrwrite: bool, img_to_write: np.ndarray = None, img_nam
             return ref_img_encoded
 
 
-###########################################################################
+##########################################################################
 
-def db_cmd(cmd: int, id: str , temp_password : str = None  ):
+def db_cmd(cmd: int, id: str, temp_password: str = None):
     ''' this is the main database fucntion and what other parts of code will see and use 99% of time 
     cmd == 0 => park car
     cmd == 1 => get car
     cmd == 2 => is_full?
-    
+
     Returns:
     if cmd == 0 => cell_id or -1 if full
     if cmd == 1 => (cell_id , is_pass_ok , cost_le , time_hour) or (-1 , False , -1 , -1) if fail
     if cmd == 2 => True or False 
     '''
-    
+
     conn = connect_db()
     if cmd == 0:  # park car command
-        return park_car_db(conn, cmd, id)
+        return park_car_db(conn, cmd, id , temp_password)
     elif cmd == 1:  # get car FROM park command ( free a cell )
-        return get_car_db(conn, cmd, id)
-    elif cmd == 2 : #is_full() 
-       #TODO#
-        ...
+        return get_car_db(conn, cmd, id , temp_password)
+    elif cmd == 2:  
+        return is_full()
 
 
 ###########################################################################
