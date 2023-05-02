@@ -240,8 +240,11 @@ def validate_pass(pass_to_check: str, id, cursor: sqlite3.Cursor) -> bool:
 def calc_cost(person_id: str, conn: sqlite3.Connection):
     """
      get diffrence between parking time and free cell time then mul with cost per hour
+     
     return :
+    
     (total_cost_le ,  tot_time_hour)
+    
      """
 
     cursor = conn.cursor()
@@ -356,16 +359,27 @@ INSERT into event_log (person_id , event_type , password_ ) VALUES
 def get_car_db(conn, cmd, id, pass_to_check: str):
     """
     get car FROM parking command ( free a cell in db )
+    
     Args:
+    
     conn: sqlite3 connection object
+    
     cmd:  zero means a park command, 1 means free cell command ( in this func cmd = 1)
+    
     id : person_id  to get his car
+    
     Return :
+    
     cell_number : for arduino to move motors
+    
     is_valid_pass : check given password
+    
     tot_cost_le : cost in le
+    
     tot_time_hour : parking time
+    
     """
+    
     cursor = conn.cursor()
     # query the parking status table  by id
     cursor.execute(
@@ -413,9 +427,13 @@ def get_car_db(conn, cmd, id, pass_to_check: str):
 def db_check_ai_id(id_to_chk: str) -> bool:  # NOTE : still not tested
     """
     Returns :
+    
     is_found
+    
     in caller function / GUIyou must check if this found id is valid id in db is actually the right one
+    
     by asking end user in GUI
+    
     """
 
     is_found = True
@@ -439,8 +457,11 @@ def access_img_table(readOrwrite: bool, img_to_write: np.ndarray = None, img_nam
     """
     *  readOrwrite == 0 ->read img 
     *  readOrwrite == 1 ->write img
+    
     Returns:
+    
             None 	  => if readOrwrite == 1
+            
             ref_img => if readOrwrite == 0
     """
     with connect_db() as db:
