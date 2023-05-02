@@ -207,7 +207,7 @@ def disable_rand_hash_seed() -> 'str':
    return  hashseed
 
 ###########################################################################
-def validate_pass(pass_to_check : str , id) -> bool :
+def validate_pass(pass_to_check : str , id , cursor : sqlite3.Cursor ) -> bool :
    
    disable_rand_hash_seed()
    pass_to_check = str(hash(pass_to_check))
@@ -368,7 +368,7 @@ def get_car_db(conn, cmd, id , pass_to_check : str ):
         return -1, -1, -1  # fail car not found err
      
     else:
-        if validate_pass(pass_to_check , id) == True :
+        if validate_pass(pass_to_check , id , cursor) == True :
             del pass_to_check
             
             # get all personal data FROM personal data table by id ( NO NEED FOR NOW)
