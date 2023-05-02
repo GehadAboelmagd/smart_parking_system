@@ -7,7 +7,7 @@ def prepare_for_parknig(park_n):
     # the COM number differs from one device to another
     time.sleep(3)
     # time_delay to ensure the serial port is ready for communication
-    data_sent='1' + chr(park_n)
+    data_sent= '1' + chr(park_n)
     ser.write(data_sent.encode('Ascii'))
     ser.flush()  #wait to ensure data is sent
     while True:
