@@ -1,10 +1,15 @@
 import tkinter as tk
 import ocr_cv
 import random
-import communication
+import communicatoin as arduino
+import Garage_DB as db
 
 
 def park_wait_page():
+
+    global l_8
+    global done_b
+
     # define page
     global p_page_2
     p_page_2 = tk.Tk()
@@ -20,19 +25,48 @@ def park_wait_page():
 
 
     def done():
-        '''arduino code'''
+        l_8.destroy()
+        done_b.destroy()
 
+        l_9 = tk.Label(p_page_2, text='WAIT', font=('Arial', 150, 'bold'), bg='#000F35', fg='#FAFF00', borderwidth=0)
+        l_9.place(x=(screen_w / 2) - 240, y=(screen_h / 2) - 150)
+
+        def park():
+            '''arduino code'''
+            try:
+                arduino.park(user_info['park_cell'])
+            except:
+                print('error in arduino')
+            #########################
+            l_9.destroy()
+            l_4 = tk.Label(p_page_2, text='DONE', font=('Arial', 150, 'bold'), bg='#000F35', fg='#04B400', borderwidth=0)
+            l_4.place(x=(screen_w / 2) - 240, y=(screen_h / 2) - 150)
+
+            def destroy_l():
+                p_page_2.destroy();root_page()
+
+            p_page_2.after(5000, destroy_l)
+
+        p_page_2.after(100, park)
+
+    def park_now():
+        '''arduino code'''
+        arduino.prepare_for_parknig(user_info['park_cell'])
         #########################
         l_3.destroy()
-        l_4 = tk.Label(p_page_2, text='DONE', font=('Arial', 150, 'bold'), bg='#000F35', fg='#04B400', borderwidth=0)
-        l_4.place(x=(screen_w / 2) - 240, y=(screen_h / 2) - 150)
 
-        def destroy():  p_page_2.destroy();root_page()
-        p_page_2.after(5000,destroy)
+        global l_8
+        global done_b
 
+        l_8 = tk.Label(p_page_2, text='Park car now', font=('Arial', 50, 'bold'), bg='#000F35', fg='#FAFF00',borderwidth=0)
+        l_8.place(x=(screen_w / 2) - 100, y=(screen_h / 4))
+
+        done_b = tk.Button(p_page_2, text='Done', font=('Arial', 14, 'bold'), bg='#04B400', fg='white',borderwidth=0)
+        done_b.configure(command=done)
+        done_b.place(x=(screen_w / 2) - 70, y=(screen_h / 2) + 50, width=140, height=40)
 
     # will change to 10 after add arduino
-    p_page_2.after(5000,done)
+    p_page_2.after(1000,park_now)
 
     p_page_2.mainloop()
 def park_page_1():
@@ -48,10 +82,9 @@ def park_page_1():
     l_1 = tk.Label(p_page_1,text='Please save this password',font=('Arial',12),bg='#000F35',fg='#FF4141', borderwidth=0)
     l_1.place(x=(screen_w/2)-90,y=(screen_h/4)-100)
 
-    '''check generated password not in DB'''
-    ################
-    password = random.randint(1000,9999)
-    user_info['password']=password
+
+    password = str(random.randint(1000,9999))
+    user_info['password']= password
     l_2 = tk.Label(p_page_1,text=f'{password}',font=('Arial',90,'bold'),bg='#000F35',fg='#FAFF00', borderwidth=0)
     l_2.place(x=(screen_w / 2)-125, y=(screen_h / 4))
     #####################
@@ -59,6 +92,7 @@ def park_page_1():
     def b_park_2():
         p_page_1.destroy()
         '''add user_info to DB'''
+        user_info['park_cell']=db.db_cmd(1,user_info['id'],password)
         #########################
         park_wait_page()
 
@@ -80,13 +114,21 @@ def park_page_1():
     p_page_1.mainloop()
 
 def park_button():
+    if(db.db_cmd(3,'12345')) :
+        l_6 = tk.Label(root,text='parking is full',font=('Arial',5,'bold'),bg='#000F35',fg='red', borderwidth=0)
+
+        l_6.place(x=100, y=100)
+        def destroy_l_6(): l_6.destroy()
+        root.after(5000, destroy_l_6)
+
+        return 0
+
     root.destroy()
     ocr_cv.testing_mode = False
     ocr_cv.max_rec_frametime_min_fps = [-1, 1000]
     ocr_cv.min_rec_frametime_max_fps = [10000, -1]
-    id = ocr_cv.ocr_main()
-    #id = (0,True)
-
+    #id = ocr_cv.ocr_main()
+    id=('11111111111111',True)
     user_info['id']=id[0]
 
     if(id[1]):
