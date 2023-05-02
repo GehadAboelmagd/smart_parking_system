@@ -11,8 +11,9 @@ import numpy as np
 import datetime
 import time
 import math
-import os , sys
-import random 
+import os
+import sys
+import random
 import string
 
 
@@ -174,58 +175,69 @@ def build_db():  # only once to create database
     create_db(conn)
 
 ##########################################################################
-def is_full() :
-   
-   with connect_db() as conn:
-      cursor = conn.cursor()
-      # check if parking is full return parking full err (from available table)
-      # we could use select sum() instead also )
-      car_counter_query = (
-         """ SELECT COUNT(status) FROM parking_status WHERE  status = 0; """)
-      cursor.execute(car_counter_query)
-      available_cells = (cursor.fetchall())[0][0]
 
-      if available_cells == 0:
-         conn.close()
-         print(" debug message : Fail parking is full!\n")
-         return False  # fail park is full
-      else:
-         return True
 
-###########################################################################
-def disable_rand_hash_seed() -> 'str': 
-   """
-   -> WARNING THIS FUNCTION MAY CHANGE BUILT-IN 'hash()' *permenentally!!!* \n
-   -> This function makes built-in hash() works as expected \n
-      i.e. ( for same input only = same hashed output ) at any session \n
-   -> so basically is makes PYTHONHASHSEDD = '0' to make it constant seed not random. \n
-   """
-   hashseed = os.getenv('PYTHONHASHSEED')
-   if not hashseed:
-      os.environ['PYTHONHASHSEED'] = '0'
-      os.execv(sys.executable, [sys.executable] + sys.argv)
-   return  hashseed
+def is_full():
+
+    with connect_db() as conn:
+        cursor = conn.cursor()
+        # check if parking is full return parking full err (from available table)
+        # we could use select sum() instead also )
+        car_counter_query = (
+            """ SELECT COUNT(status) FROM parking_status WHERE  status = 0; """)
+        cursor.execute(car_counter_query)
+        available_cells = (cursor.fetchall())[0][0]
+
+        if available_cells == 0:
+            conn.close()
+            print(" debug message : Fail parking is full!\n")
+            return False  # fail park is full
+        else:
+            return True
 
 ###########################################################################
-def validate_pass(pass_to_check : str , id , cursor : sqlite3.Cursor ) -> bool :
-   
-   disable_rand_hash_seed()
-   pass_to_check = str(hash(pass_to_check))
-   
-   cursor.execute(
+
+
+def disable_rand_hash_seed() -> 'str':
+    """
+    -> WARNING THIS FUNCTION MAY CHANGE BUILT-IN 'hash()' *permenentally!!!* \n
+    -> This function makes built-in hash() works as expected \n
+       i.e. ( for same input only = same hashed output ) at any session \n
+    -> so basically is makes PYTHONHASHSEDD = '0' to make it constant seed not random. \n
+    """
+    hashseed = os.getenv('PYTHONHASHSEED')
+    if not hashseed:
+        os.environ['PYTHONHASHSEED'] = '0'
+        os.execv(sys.executable, [sys.executable] + sys.argv)
+    return hashseed
+
+###########################################################################
+
+
+def validate_pass(pass_to_check: str, id, cursor: sqlite3.Cursor) -> bool:
+
+    disable_rand_hash_seed()
+    pass_to_check = str(hash(pass_to_check))
+
+    cursor.execute(
         """
         SELECT  password_ FROM event_log WHERE person_id = ? AND event_type = 0
         ORDER BY event_id DESC;
         """, (id,))
-   saved_pass= (cursor.fetchall())[0]
-   
-   if saved_pass == pass_to_check :
-      return True
-   else :
-      return False
-   
+
+    if len(saved_pass) == 0:
+        return False
+    saved_pass = (cursor.fetchall())[0][0]
+
+    if saved_pass == pass_to_check:
+        return True
+    else:
+        return False
+
 ###########################################################################
-def calc_cost(person_id: str, conn : sqlite3.Connection ):
+
+
+def calc_cost(person_id: str, conn: sqlite3.Connection):
     """
      get diffrence between parking time and free cell time then mul with cost per hour
     return :
@@ -277,7 +289,7 @@ def calc_cost(person_id: str, conn : sqlite3.Connection ):
 
 ###########################################################################
 
-def park_car_db(conn, cmd, id , temp_pass : str):
+def park_car_db(conn, cmd, id, temp_pass: str):
     '''park car command to UPDATE database   return : park_cell_no '''
 
     cursor = conn.cursor()
@@ -301,8 +313,8 @@ def park_car_db(conn, cmd, id , temp_pass : str):
         # take all persons data and add new event in events log table ( event type : occupy parking cell)
         event_type = cmd
         person_id = id
-        
-        #Hash the pass for security before saving in db   
+
+        # Hash the pass for security before saving in db
         disable_rand_hash_seed()
         pass_hashed = str(hash(temp_pass))
         del temp_pass
@@ -310,7 +322,7 @@ def park_car_db(conn, cmd, id , temp_pass : str):
         cursor.execute("""
 INSERT into event_log (person_id , event_type , password_ ) VALUES
 (? , ? , ?);
-""", (person_id, event_type , pass_hashed ))
+""", (person_id, event_type, pass_hashed))
         conn.commit()
 
         # UPDATE parking status table ( take the nearist available parking) and UPDATE total available table
@@ -341,7 +353,7 @@ INSERT into event_log (person_id , event_type , password_ ) VALUES
 ###########################################################################
 
 
-def get_car_db(conn, cmd, id , pass_to_check : str ):
+def get_car_db(conn, cmd, id, pass_to_check: str):
     """
     get car FROM parking command ( free a cell in db )
     Args:
@@ -366,16 +378,16 @@ def get_car_db(conn, cmd, id , pass_to_check : str ):
         conn.close()
         print("debug message : FAIL car not found!\n")
         return -1, -1, -1  # fail car not found err
-     
+
     else:
-        if validate_pass(pass_to_check , id , cursor) == True :
+        if validate_pass(pass_to_check, id, cursor) == True:
             del pass_to_check
-            
+
             # get all personal data FROM personal data table by id ( NO NEED FOR NOW)
-            cursor.execute(""" SELECT * FROM people_info WHERE id = ?;""", (id,))
+            cursor.execute(
+                """ SELECT * FROM people_info WHERE id = ?;""", (id,))
             person_data = cursor.fetchall()  # id, name, car_model, license_exp_date
-            
-         
+
             # register new event in event log table with data you got (event type = free parking cell )
             cursor.execute(""" INSERT into event_log (person_id , event_type)
             VALUES(? , ?);
@@ -384,16 +396,16 @@ def get_car_db(conn, cmd, id , pass_to_check : str ):
 
             # UPDATE parking status table
             cursor.execute(
-                  """ UPDATE parking_status SET status = 0 , taken_by = NULL WHERE taken_by = ? ;""", (id,))
+                """ UPDATE parking_status SET status = 0 , taken_by = NULL WHERE taken_by = ? ;""", (id,))
             conn.commit()
 
             # conn.close() will be in calc_cost() function
             # return parking cell number + park cost info
             print("debug message : SUCCESS Database has been CHANGED!\n")
             # change to list [] if you want to easy overwrite
-            return (cell_data[0], True , *calc_cost(id, conn))
-        else :
-           return -1 , False , -1 , -1 #FAIL PASSWORD DONT MATCH
+            return (cell_data[0], True, *calc_cost(id, conn))
+        else:
+            return -1, False, -1, -1  # FAIL PASSWORD DONT MATCH
 
 
 ###########################################################################
@@ -456,21 +468,26 @@ def access_img_table(readOrwrite: bool, img_to_write: np.ndarray = None, img_nam
 def db_cmd(cmd: int, id: str, temp_password: str = None):
     ''' this is the main database fucntion and what other parts of code will see and use 99% of time 
     cmd == 0 => park car
+
     cmd == 1 => get car
+
     cmd == 2 => is_full?
 
     Returns:
+
     if cmd == 0 => cell_id or -1 if full
+
     if cmd == 1 => (cell_id , is_pass_ok , cost_le , time_hour) or (-1 , False , -1 , -1) if fail
+
     if cmd == 2 => True or False 
     '''
 
     conn = connect_db()
     if cmd == 0:  # park car command
-        return park_car_db(conn, cmd, id , temp_password)
+        return park_car_db(conn, cmd, id, temp_password)
     elif cmd == 1:  # get car FROM park command ( free a cell )
-        return get_car_db(conn, cmd, id , temp_password)
-    elif cmd == 2:  
+        return get_car_db(conn, cmd, id, temp_password)
+    elif cmd == 2:
         return is_full()
 
 
@@ -478,15 +495,17 @@ def db_cmd(cmd: int, id: str, temp_password: str = None):
 if __name__ == "__main__":
     # TEST YOUR CODE
 
-    build_db()  # build the sqlite3 db for fist time ( IF BUILT BEFORE SQLITE3 ERROR WILL BE raised )
+   #  build_db()  # build the sqlite3 db for fist time ( IF BUILT BEFORE SQLITE3 ERROR WILL BE raised )
 
-#  #Example: park new car with driver id = 54302518496307
-#  db_cmd(0, str(54302518496307))
+#  # Example: park new car with driver id = 54302518496307
+#     db_cmd(0, str(54302518496307), "1234")
 
-#  time.sleep(30) # wait 30 sec so  we can round it up to 1 houre == 3 pounds cost
+#     # wait 30 sec so  we can round it up to 1 houre == 3 pounds cost
+#     time.sleep(5)
 
-#  #Example: free a car with driver id = 54302518496307
-#  cell_id_cost_time = db_cmd(1, str(54302518496307))
-#  print("CELL_ID TO FREE IS : " , cell_id_cost_time[0] )
-#  print("Total prking cost : " , cell_id_cost_time[1])
-#  print("Total time on parking : " , cell_id_cost_time[2])
+# #  #Example: free a car with driver id = 54302518496307
+#     cell_id_pass_cost_time = db_cmd(1, str(54302518496307), "1234")
+#     print("CELL_ID TO FREE IS : ", cell_id_pass_cost_time[0])
+#     print(" pass is ok? : ", cell_id_pass_cost_time[1])
+#     print("Total prking cost : ", cell_id_pass_cost_time[2])
+#     print("Total time on parking : ", cell_id_pass_cost_time[3])
