@@ -19,6 +19,7 @@ import pytesseract as tsr
 import multiprocessing as mp
 
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
+# TODO : get higher res reference to save in db (and increase spaced between id digits more)
 # TODO : make better use of reactangle color change 
 # TODO : finish CUDA accel function and use it in ocr_main()
 # TODO : car plate / license id simple  template detection
@@ -833,8 +834,8 @@ def ocr_ready_id( frames_buff: list , frames_deskewed_buff : list , id_card_spec
 			print ( 'valid counter2 :' , valid_cnt2)#TESTING 
 
 		i -= 1
-		n = 1
-		validate_after =  (n  *  fps ) // 2  #after frames  acccepted acuurate for 1 second 
+		n = 4
+		validate_after = n #n frames that is checked in db and  valid + in sequence is enough
   
 		if valid_cnt >= validate_after :  #perfect match  if still valid for a whole n (sec)
 			all_success = True
@@ -842,7 +843,7 @@ def ocr_ready_id( frames_buff: list , frames_deskewed_buff : list , id_card_spec
 			final_value = max ( valid_ids_freq ,  key= valid_ids_freq.get ) 
 			return all_success , final_value 
 
-		elif valid_cnt > validate_after // 2  :
+		elif valid_cnt >= validate_after // 2  :
 			return True , max ( valid_ids_freq ,  key= valid_ids_freq.get ) #Sucess but not perfect match
 
 		if valid_cnt2 >= validate_after:  #perfect match  if still valid for a whole n (sec)
@@ -851,7 +852,7 @@ def ocr_ready_id( frames_buff: list , frames_deskewed_buff : list , id_card_spec
 			final_value = max ( valid_ids_freq2 ,  key= valid_ids_freq2.get ) 
 			return all_success , final_value 
 
-		elif valid_cnt2 > validate_after // 2  :
+		elif valid_cnt2 >= validate_after // 2  :
 			return True , max ( valid_ids_freq2 ,  key= valid_ids_freq2.get ) #Sucess but not perfect match
 	
 
@@ -873,10 +874,10 @@ def ocr_ready_id( frames_buff: list , frames_deskewed_buff : list , id_card_spec
  
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
 
-def save_ref_img_db ( name : str = "ref_rot_img"): #only use manually
+def save_ref_img_db ( name : str = "ref_rot_img"): #only use manually 
 
 	#Apply same operations that made to image before calling deskew()
-	img_path = r"clear.jpg"
+	img_path = r"/extra/clear.jpg"
 	path_no_ext , img_format = os.path.splitext(img_path)
 	ref_img = cv2.imread(f"./{img_path}", cv2.IMREAD_GRAYSCALE)
 	ref_img = cv2.bitwise_not(ref_img)
@@ -891,7 +892,7 @@ def save_ref_img_db ( name : str = "ref_rot_img"): #only use manually
   
 	else:
 		#send to db
-		db.access_img_table( 1 , img_to_write= ref_img_encoded , img_name= name )
+		db.access_img_table( 1 , img_to_write= ref_img_encoded , img_name= name  , ref_id_val= '54302518496307') 
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
 def get_ref_img_db(img_name : str = "ref_rot_img") -> np.ndarray :
 
