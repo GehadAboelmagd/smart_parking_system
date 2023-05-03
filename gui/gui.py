@@ -92,7 +92,7 @@ def park_page_1():
     def b_park_2():
         p_page_1.destroy()
         '''add user_info to DB'''
-        user_info['park_cell']=db.db_cmd(1,user_info['id'],password)
+        user_info['park_cell']=db.db_cmd(0,user_info['id'],password)
         #########################
         park_wait_page()
 
@@ -114,7 +114,7 @@ def park_page_1():
     p_page_1.mainloop()
 
 def park_button():
-    if(db.db_cmd(3,'12345')) :
+    if(db.db_cmd(2)) :
         l_6 = tk.Label(root,text='parking is full',font=('Arial',5,'bold'),bg='#000F35',fg='red', borderwidth=0)
 
         l_6.place(x=100, y=100)
@@ -125,10 +125,8 @@ def park_button():
 
     root.destroy()
     ocr_cv.testing_mode = False
-    ocr_cv.max_rec_frametime_min_fps = [-1, 1000]
-    ocr_cv.min_rec_frametime_max_fps = [10000, -1]
     #id = ocr_cv.ocr_main()
-    id=('11111111111111',True)
+    id=('54302518496307',True)
     user_info['id']=id[0]
 
     if(id[1]):
