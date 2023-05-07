@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import messagebox
 import ocr_cv
 import random
 import communicatoin as arduino
@@ -62,7 +63,7 @@ def park_wait_page():
         global done_b
 
         l_8 = tk.Label(p_page_2, text='Park car now', font=('Arial', 50, 'bold'), bg='#000F35', fg='#FAFF00',borderwidth=0)
-        l_8.place(x=(screen_w / 2) - 100, y=(screen_h / 4))
+        l_8.place(x=(screen_w / 2) - 200, y=(screen_h / 4))
 
         done_b = tk.Button(p_page_2, text='Done', font=('Arial', 14, 'bold'), bg='#04B400', fg='white',borderwidth=0)
         done_b.configure(command=done)
@@ -125,8 +126,8 @@ def park_button():
 
     root.destroy()
     ocr_cv.testing_mode = False
-    #id = ocr_cv.ocr_main()
-    id=('11111111111111',True)
+    id = ocr_cv.ocr_main()
+    #id=('11111111111111',True)
     user_info['id']=id[0]
 
     if(id[1]):
@@ -134,35 +135,145 @@ def park_button():
     else:
         root_page()
 
+def get_wait_page():
+
+    global l_g_8
+
+    # define page
+    global g_page_2
+    g_page_2 = tk.Tk()
+    g_page_2.configure(bg='#000F35')
+    g_page_2.geometry(f"{screen_w}x{screen_h}+0+0")
+    g_page_2.title("GET Page.2")
+    #################################
+
+
+    # wait word
+    l_3 = tk.Label(g_page_2, text='WAIT', font=('Arial', 150, 'bold'), bg='#000F35', fg='#FAFF00', borderwidth=0)
+    l_3.place(x=(screen_w / 2)-240, y=(screen_h / 2)-150)
+
+
+    def done():
+        '''arduino code'''
+        try:
+            arduino.getcar(ocr_info[0])
+        except:
+            print('error in arduino')
+        #########################
+        l_3.destroy()
+        l_4 = tk.Label(g_page_2, text='DONE', font=('Arial', 150, 'bold'), bg='#000F35', fg='#04B400', borderwidth=0)
+        l_4.place(x=(screen_w / 2) - 240, y=(screen_h / 2) - 150)
+
+        def destroy_l():
+            g_page_2.destroy();root_page()
+
+        g_page_2.after(5000, destroy_l)
+
+
+    # will change to 10 after add arduino
+    g_page_2.after(100,done)
+
+    g_page_2.mainloop()
 
 
 def pay_page():
-    print(ocr_info[0])
-    get_info = db.db_cmd(1,ocr_info[0])
-
-    if(not get_info[1]):
-        get_car_page()
-        return 0
-
     global pay_p
     pay_p = tk.Tk()
-    pay_p.title("Hello car")
+    pay_p.title("pay")
     pay_p.configure(bg='#000F35')
     pay_p.geometry(f"{screen_w}x{screen_h}")
 
+    def pay_b_func():
+        pay_p.destroy()
+        get_wait_page()
 
-    tk.Label(pay_p,text=f"Time: {get_info[3]}  hours ",font=('Arial',15,'bold'),bg='black',fg='purple').place(x=(screen_w / 2) - 70, y=(screen_h / 4))
-    tk.Label(pay_p,text=f"cost:  {get_info[2]}  $",font=('Arial',15,'bold'),bg='black',fg='purple').place(x=(screen_w / 2) - 70, y=(screen_h / 4) )
+    tk.Label(pay_p,text=f"Time: {get_info[3]}  hours ",font=('Arial',20,'bold'),bg='#000F35',fg='white').place(x=(screen_w / 2)-100, y=(screen_h / 4)+100)
+    tk.Label(pay_p,text=f"Cost:  {get_info[2]}  $",font=('Arial',20,'bold'),bg='#000F35',fg='white').place(x=(screen_w / 2)-100, y=(screen_h /4)+200 )
     pay_b=tk.Button(pay_p,
                text="pay",
                 font=('Arial', 14, 'bold'),
                 bg='#04B400',
                 fg='white',
                 borderwidth=0,
-                )
+                command=pay_b_func)
     pay_b.place(x=(screen_w / 2) - 70, y=(screen_h / 4) * 3 - 50, width=140, height=40)
 
     pay_p.mainloop()
+
+def password_page():
+    password_p = tk.Tk()
+    password_p.title("get car")
+    password_p.configure(bg='#000F35')
+    password_p.geometry(f"{screen_w}x{screen_h}")
+
+    def validate_numeric_input(value):
+        if value.isdigit():
+            return True
+        elif value == "":
+            return True
+        else:
+            return False
+
+    validate_command = password_p.register(validate_numeric_input)
+
+
+    tk.Label(password_p, text='ID', font=('Arial', 18, 'bold'), bg='#000F35', fg='#BBC2FE').place(
+        x=(screen_w / 2)-10, y=200)
+
+    entry_id = tk.Entry(password_p,font=('Arial', 14, 'bold'), validate="key", validatecommand=(validate_command, "%P"))
+    entry_id.place(x=(screen_w / 2)-150, y=240,width=300,height=30)
+
+
+    tk.Label(password_p, text='PASSWORD', font=('Arial', 18, 'bold'), bg='#000F35', fg='#BBC2FE').place(
+        x=(screen_w / 2) -70, y=300)
+
+    entry_password = tk.Entry(password_p, font=('Arial', 14, 'bold'), validate="key",validatecommand=(validate_command, "%P"))
+    entry_password.place(x=(screen_w / 2) - 150, y=340, width=300, height=30)
+
+    def enter_b_func():
+        id_user = entry_id.get()
+        password = entry_password.get()
+
+        if(id_user == "" or password == ""):
+            messagebox.showwarning("Warning", "EMPTY INPUT")
+            return 0
+
+        global get_info
+
+        get_info = db.db_cmd(1,id_user,password)
+        #get_info = (2, True, 50, 5)
+
+        if (get_info[0] == -1):
+            messagebox.showwarning("Warning", "Not exist user")
+            return 0
+        password_p.destroy()
+        pay_page()
+
+
+    enter_b = tk.Button(password_p,
+                      text="Enter",
+                      font=('Arial', 14, 'bold'),
+                      bg='#04B400',
+                      fg='white',
+                      borderwidth=0,
+                      command=enter_b_func)
+    enter_b.place(x=(screen_w / 2) - 70, y=(screen_h / 4) * 3 - 150, width=140, height=40)
+
+    def cancel():
+           password_p.destroy()
+           get_car_page()
+
+    btn3=tk.Button(password_p,
+                   text="Cancel",
+                   font = ('Arial', 14, 'bold'),
+                   bg = '#D40101',
+                   fg = 'white',
+                   borderwidth = 0,
+                   command=cancel)
+    btn3.place(x=(screen_w/2)-70,y=(screen_h/4)*3-50,width=140,height=40)
+
+    password_p.mainloop()
+
 
 def get_car_page():
   global get_car
@@ -179,16 +290,26 @@ def get_car_page():
       ocr_cv.testing_mode = False
 
       global ocr_info
-      #ocr_info = ocr_cv.ocr_main()
-      ocr_info=('11111111111111',True)
+      global get_info
+      ocr_info = ocr_cv.ocr_main()
+      #ocr_info=('11111111111111',True)
 
       if (ocr_info[1]):
-         pay_page()
+
+          get_info = db.db_cmd(1,ocr_info[0])
+          #get_info = (2, True, 50, 5)
+
+          if (get_info[0] == -1):
+              get_car_page()
+              return 0
+          pay_page()
       else:
           get_car_page()
       ##############
 
-
+  def password_b():
+      get_car.destroy()
+      password_page()
 
   tk.Label(get_car,
        text="Get it by",font=('Arial',30,'bold'),bg='#000F35',fg='#FF0000').place(x=(screen_w/8),y=(screen_h/2)-100)
@@ -206,8 +327,9 @@ def get_car_page():
                 text="password",
                 font=('Arial', 14, 'bold'),
                 bg='#04B400',
-                fg='white', borderwidth=0)
-  btn2.place(x=(screen_w/3)*2-20,y=(screen_h/2)-90,width=140,height=40)
+                fg='white', borderwidth=0,
+                command=password_b)
+  btn2.place(x=(screen_w/3)*2-120,y=(screen_h/2)-90,width=140,height=40)
 
 
   def cancel():
