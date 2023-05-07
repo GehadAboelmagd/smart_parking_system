@@ -51,7 +51,10 @@ def park_wait_page():
 
     def park_now():
         '''arduino code'''
-        arduino.prepare_for_parknig(user_info['park_cell'])
+        try :
+            arduino.prepare_for_parknig(user_info['park_cell'])
+        except:
+            print('error in arduino prepare')
         #########################
         l_3.destroy()
 
@@ -93,15 +96,9 @@ def park_page_1():
     def b_park_2():
         p_page_1.destroy()
         '''add user_info to DB'''
-        print(user_info)
 
-        try:
-            db.db_cmd(0,user_info['id'],password)
-        except:
-            user_info['park_cell'] = 2
-            print('error in DB')
+        user_info['park_cell']=db.db_cmd(0,user_info['id'],password)
 
-        print(user_info)
         #########################
         park_wait_page()
 
@@ -129,7 +126,7 @@ def park_button():
     root.destroy()
     ocr_cv.testing_mode = False
     #id = ocr_cv.ocr_main()
-    id=('54302518496307',True)
+    id=('11111111111111',True)
     user_info['id']=id[0]
 
     if(id[1]):
@@ -140,14 +137,22 @@ def park_button():
 
 
 def pay_page():
+    print(ocr_info[0])
+    get_info = db.db_cmd(1,ocr_info[0])
+
+    if(not get_info[1]):
+        get_car_page()
+        return 0
+
     global pay_p
     pay_p = tk.Tk()
     pay_p.title("Hello car")
     pay_p.configure(bg='#000F35')
     pay_p.geometry(f"{screen_w}x{screen_h}")
 
-    tk.Label( pay_p,text="Time:  4 hours ",font=('Arial',15,'bold'),bg='AntiqueWhite1',fg='purple').place(x=260,y=120)
-    x=tk.Label(pay_p,text="price:          6 $",font=('Arial',15,'bold'),bg='AntiqueWhite1',fg='purple').place(x=260,y=149)
+
+    tk.Label(pay_p,text=f"Time: {get_info[3]}  hours ",font=('Arial',15,'bold'),bg='black',fg='purple').place(x=(screen_w / 2) - 70, y=(screen_h / 4))
+    tk.Label(pay_p,text=f"cost:  {get_info[2]}  $",font=('Arial',15,'bold'),bg='black',fg='purple').place(x=(screen_w / 2) - 70, y=(screen_h / 4) )
     pay_b=tk.Button(pay_p,
                text="pay",
                 font=('Arial', 14, 'bold'),
@@ -160,8 +165,6 @@ def pay_page():
     pay_p.mainloop()
 
 def get_car_page():
-  root.destroy()
-
   global get_car
 
   get_car=tk.Tk()
@@ -176,8 +179,8 @@ def get_car_page():
       ocr_cv.testing_mode = False
 
       global ocr_info
-      #id = ocr_cv.ocr_main()
-      ocr_info=('54302518496307',True)
+      #ocr_info = ocr_cv.ocr_main()
+      ocr_info=('11111111111111',True)
 
       if (ocr_info[1]):
          pay_page()
@@ -251,9 +254,10 @@ def root_page():
     b_park.place(x=(screen_w/2)-70,y=(screen_h/2)-50,width=140,height=40)
     ###################################
 
+    def get_car_button(): root.destroy();get_car_page()
     #define getcar button
     b_get = tk.Button(root, text='GetCar',font=('Arial',14,'bold'),bg='#D40101',fg='white', borderwidth=0)
-    b_get.configure(command=get_car_page)
+    b_get.configure(command=get_car_button)
     b_get.place(x=(screen_w/2)-70,y=(screen_h/4)*3-50,width=140,height=40)
     ###################################
 
