@@ -253,9 +253,10 @@ def disable_rand_hash_seed() -> 'str':
 
 def validate_pass(pass_to_check: str, id, cursor: sqlite3.Cursor) -> bool:
 
-    disable_rand_hash_seed()
+    #  disable_rand_hash_seed()
       
-    pass_to_check = str(hash(pass_to_check))
+    #  pass_to_check = str(hash(pass_to_check))
+    pass_to_check = str(pass_to_check)
 
     cursor.execute(
         """
@@ -364,8 +365,9 @@ def park_car_db(conn, cmd, id, temp_pass: str):
         person_car2 = person_info[0][3]  # no need for now
 
         # Hash the pass for security before saving in db
-        disable_rand_hash_seed()
-        pass_hashed = str(hash(temp_pass))
+      #   disable_rand_hash_seed()
+      #   pass_hashed = str(hash(temp_pass))
+        pass_hashed = str(temp_pass)
         del temp_pass
 
          # check: you cant park a car then park it again before freeing it!
