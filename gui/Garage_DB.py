@@ -265,8 +265,8 @@ def validate_pass(pass_to_check: str, id, cursor: sqlite3.Cursor) -> bool:
         """, (id,))
 
     saved_pass = (cursor.fetchall())[0][0]
-    if len(saved_pass) == 0:
-        return False
+    if len(saved_pass) == 0 or pass_to_check == 'None':
+        return True
 
     if saved_pass == pass_to_check:
         return True
