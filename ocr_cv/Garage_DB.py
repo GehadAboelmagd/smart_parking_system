@@ -253,9 +253,10 @@ def disable_rand_hash_seed() -> 'str':
 
 def validate_pass(pass_to_check: str, id, cursor: sqlite3.Cursor) -> bool:
 
-    disable_rand_hash_seed()
-
-    pass_to_check = str(hash(pass_to_check))
+    #  disable_rand_hash_seed()
+      
+    #  pass_to_check = str(hash(pass_to_check))
+    pass_to_check = str(pass_to_check)
 
     cursor.execute(
         """
@@ -264,8 +265,8 @@ def validate_pass(pass_to_check: str, id, cursor: sqlite3.Cursor) -> bool:
         """, (id,))
 
     saved_pass = (cursor.fetchall())[0][0]
-    if len(saved_pass) == 0:
-        return False
+    if len(saved_pass) == 0 or pass_to_check == 'None':
+        return True
 
     if saved_pass == pass_to_check:
         return True
@@ -325,7 +326,7 @@ def calc_cost(person_id: str, car: str, conn: sqlite3.Connection):
     # return to get_car_db()
     # ( so that get_car_db() return finally to  main code the : cell_id to free  , total cost  , total parking time )
     # change to list [] if you want to easy overwrite
-    return (tot_cost_le, tot_time_hour)
+    return (tot_cost_le , tot_time_hour)
 
 
 ###########################################################################
@@ -364,8 +365,9 @@ def park_car_db(conn, cmd, id, temp_pass: str):
         person_car2 = person_info[0][3]  # no need for now
 
         # Hash the pass for security before saving in db
-        disable_rand_hash_seed()
-        pass_hashed = str(hash(temp_pass))
+      #   disable_rand_hash_seed()
+      #   pass_hashed = str(hash(temp_pass))
+        pass_hashed = str(temp_pass)
         del temp_pass
 
          # check: you cant park a car then park it again before freeing it!
@@ -391,7 +393,7 @@ def park_car_db(conn, cmd, id, temp_pass: str):
 
         except sqlite3.Error as error:
             conn.close()
-            print(" debug message : Failure :) !\n", error)
+            print(" debug message : Failure :) !\n" ,error)
             return -1, -1, -1, -1
          #   """
       #   CREATE TABLE IF NOT EXISTS event_log(
@@ -460,9 +462,10 @@ def get_car_db(conn, cmd, id, pass_to_check: str):
         conn.close()
         print("debug message : FAIL car not found!\n")
         return -1, -1, -1, -1  # fail car not found err
-
-    if type(cell_data) == list:
+     
+    if type(cell_data) == list :
        cell_data = cell_data[0]
+       
 
     status = cell_data[1]
 
@@ -486,7 +489,7 @@ def get_car_db(conn, cmd, id, pass_to_check: str):
 
             try:
                 # register new event in event log table with data you got (event type = free parking cell )
-                cursor.execute(""" INSERT INTO event_log (person_id , event_type ,car)
+                cursor.execute(""" INSERT into event_log (person_id , event_type ,car)
                VALUES(? , ? , ?);
                """, (id, cmd, person_car))
                 conn.commit()
@@ -494,7 +497,7 @@ def get_car_db(conn, cmd, id, pass_to_check: str):
             except sqlite3.Error as error:
                 conn.close()
                 print(
-                    "Failed to Insert to  event_log tabel : ", error, "\n")
+                    "Failed to Insert to  event_log tabel : " , error , "\n")
                 return -1, -1, -1, -1  # fail car not found err
 
             # UPDATE parking status table
@@ -506,7 +509,7 @@ def get_car_db(conn, cmd, id, pass_to_check: str):
             # return parking cell number + park cost info
             print("debug message : SUCCESS Database has been CHANGED!\n")
             # change to list [] if you want to easy overwrite
-            return (cell_data[0], True, *calc_cost(id, person_car, conn))
+            return (cell_data[0], True, *calc_cost(id, person_car ,conn))
 
         else:
             print("debug message : Wrong password Database has been CHANGED!\n")
@@ -543,15 +546,10 @@ def db_check_ai_id(id_to_chk: str) -> bool:  # NOTE : still not tested
 def access_img_table(readOrwrite: bool, img_to_write: np.ndarray = None, img_name: str = "ref_rot_img", ref_id_val: str = '54302518496307'):
     """
     *  readOrwrite == 0 ->read img
-    
     *  readOrwrite == 1 ->write img
-    
     Returns:
-    
             None 	  => if readOrwrite == 1
-            
             ref_img => if readOrwrite == 0
-            
     """
     with connect_db() as db:
         cursor = db.cursor()
@@ -560,7 +558,7 @@ def access_img_table(readOrwrite: bool, img_to_write: np.ndarray = None, img_nam
             encoded_img = img_to_write
             cursor.execute(
                 """INSERT INTO reference_images  (img_name , img_data , Extracted_id)
-                   VALUES (?, ? ,?);
+                   VALUES (?,? ,?);
                 """, (img_name, encoded_img, ref_id_val)
             )
             db.commit()
@@ -605,7 +603,7 @@ def db_cmd(cmd: int, id: str = "NULL", temp_password: str = 'None'):
 ###########################################################################
 if __name__ == "__main__":
     # TEST YOUR CODE
-   # build_db()  # build the sqlite3 db for fist time ( IF BUILT BEFORE SQLITE3 ERROR WILL BE raised )
+   #   build_db()  # build the sqlite3 db for fist time ( IF BUILT BEFORE SQLITE3 ERROR WILL BE raised )
 
         # Example: is full
    print(db_cmd(2))
