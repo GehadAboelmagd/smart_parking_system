@@ -575,7 +575,7 @@ def access_img_table(readOrwrite: bool, img_to_write: np.ndarray = None, img_nam
 
 ##########################################################################
 
-def db_cmd(cmd: int, id: str = "NULL", temp_password: str = None):
+def db_cmd(cmd: int, id: str = "NULL", temp_password: str = 'None'):
     ''' this is the main database fucntion and what other parts of code will see and use 99% of time
 
     cmd == 0 => park car
