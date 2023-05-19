@@ -1,8 +1,48 @@
 import serial
 import time
+import tkinter as tk
 
-com = 'COM8'
-ser = serial.Serial(com, 9600)
+com = None
+def com_page(error=0):
+    page = tk.Tk()
+    page.geometry(f"400x150+500+200")
+    page.title("Com page")
+
+    if(error==1):
+        tk.Label(page, text='Wrong com', font=('Arial', 10),fg='red').place(x=5, y=5)
+
+    l_e = tk.Label(page,text='Entry Com',font=('Arial', 14, 'bold'))
+    l_e.place(x=160,y=20)
+
+    entry = tk.Entry(page,)
+    entry.place(x=110,y=60,height=25,width=200)
+
+
+    global com
+    def get_val():
+        global com
+        com = entry.get()
+        page.destroy()
+
+    b = tk.Button(page,text="Enter",
+                      font=('Arial', 14, 'bold'),
+                      bg='#04B400',
+                      fg='white',
+                      borderwidth=0,command=get_val)
+    b.place(x=180,y=100)
+
+    page.mainloop()
+
+
+while(com==None):com_page()
+
+while(1):
+    try:
+        ser = serial.Serial(com, 9600)
+        break
+    except:
+        com_page(1)
+
 def prepare_for_parknig(park_n):
     # open serial communication port
     # the COM number differs from one device to another

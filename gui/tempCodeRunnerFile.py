@@ -1,4 +1,4 @@
-ple: park new car with driver id = 54302518496307
+#ple: park new car with driver id = 54302518496307
 #    db_cmd(0, str(54302518496307), "1234")
 
 #     # wait 30 sec so  we can round it up to 1 houre == 3 pounds cost
