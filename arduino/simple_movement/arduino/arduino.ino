@@ -18,17 +18,16 @@ int flag=0;
 //initially there is no park_n without platform
 int without_platform_n=0;
 
-// step 
-int floor_step[4] = {0,200,400,600};
-int park_step[3] = {50,100,150};
+// step
+int floor_step[4] = {0,930,2010,2600};
+int park_step[3] = {52,100,150};
 //
 
 void setup()
 {
   Serial.begin(9600);
-  motor_1.setSpeed(10); //10 rpm or maybe modified
-  motor_2.setSpeed(10); // may be modified
-  
+  motor_1.setSpeed(50); //10 rpm or maybe modified
+  motor_2.setSpeed(5); // may be modified
 }
 
 
@@ -64,7 +63,6 @@ void prepare_for_parking(int x)
   {
     up_draw_down(x);
   }
-  
   else if (flag==1)
   {
     if (x==without_platform_n)
