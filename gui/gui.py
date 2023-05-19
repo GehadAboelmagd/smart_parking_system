@@ -35,7 +35,7 @@ def park_wait_page():
         def park():
             '''arduino code'''
             try:
-                arduino.park(user_info['park_cell'])
+                arduino.park(user_info['park_cell']+1)
             except:
                 print('error in arduino')
             #########################
@@ -52,10 +52,9 @@ def park_wait_page():
 
     def park_now():
         '''arduino code'''
-        try :
-            arduino.prepare_for_parknig(user_info['park_cell'])
-        except:
-            print('error in arduino prepare')
+
+        arduino.prepare_for_parknig(user_info['park_cell']+1)
+
         #########################
         l_3.destroy()
 
@@ -98,7 +97,7 @@ def park_page_1():
         p_page_1.destroy()
         '''add user_info to DB'''
 
-        user_info['park_cell']=db.db_cmd(0,user_info['id'],password)
+        user_info['park_cell']=int(db.db_cmd(0,user_info['id'],password)[0])
 
         #########################
         park_wait_page()
@@ -126,8 +125,8 @@ def park_button():
 
     root.destroy()
     ocr_cv.testing_mode = False
-    id = ocr_cv.ocr_main()
-    #id=('11111111111111',True)
+    #id = ocr_cv.ocr_main()
+    id=('11111111111111',True)
     user_info['id']=id[0]
 
     if(id[1]):
@@ -155,10 +154,7 @@ def get_wait_page():
 
     def done():
         '''arduino code'''
-        try:
-            arduino.getcar(ocr_info[0])
-        except:
-            print('error in arduino')
+        arduino.getcar(int(get_info[0])+1)
         #########################
         l_3.destroy()
         l_4 = tk.Label(g_page_2, text='DONE', font=('Arial', 150, 'bold'), bg='#000F35', fg='#04B400', borderwidth=0)
@@ -291,8 +287,8 @@ def get_car_page():
 
       global ocr_info
       global get_info
-      ocr_info = ocr_cv.ocr_main()
-      #ocr_info=('11111111111111',True)
+      #ocr_info = ocr_cv.ocr_main()
+      ocr_info=('11111111111111',True)
 
       if (ocr_info[1]):
 

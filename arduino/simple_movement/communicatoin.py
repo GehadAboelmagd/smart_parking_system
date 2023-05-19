@@ -1,8 +1,9 @@
 import serial
 import time
 
+com = 'COM8'
 def prepare_for_parknig(park_n):
-    ser=serial.Serial('COM7',9600)
+    ser=serial.Serial(com,9600)
     # open serial communication port
     # the COM number differs from one device to another
     time.sleep(3)
@@ -19,7 +20,7 @@ def prepare_for_parknig(park_n):
 
 
 def park(park_n):
-    ser = serial.Serial('COM7', 9600)
+    ser = serial.Serial(com, 9600)
     time.sleep(3)
     data_sent = '2' + chr(park_n)
     ser.write(data_sent.encode('Ascii'))
@@ -32,7 +33,7 @@ def park(park_n):
 
 
 def getcar(park_n):
-    ser = serial.Serial('COM7', 9600)
+    ser = serial.Serial(com, 9600)
     time.sleep(3)
     data_sent= '3'+ chr(park_n)
     ser.write(data_sent.encode('Ascii'))
