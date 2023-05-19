@@ -1,8 +1,49 @@
 import serial
 import time
+import tkinter as tk
+
+com = None
+def com_page(error=0):
+    page = tk.Tk()
+    page.geometry(f"400x150+500+200")
+    page.title("Com page")
+
+    if(error==1):
+        tk.Label(page, text='Wrong com', font=('Arial', 10),fg='red').place(x=5, y=5)
+
+    l_e = tk.Label(page,text='Entry Com',font=('Arial', 14, 'bold'))
+    l_e.place(x=160,y=20)
+
+    entry = tk.Entry(page,)
+    entry.place(x=110,y=60,height=25,width=200)
+
+
+    global com
+    def get_val():
+        global com
+        com = entry.get()
+        page.destroy()
+
+    b = tk.Button(page,text="Enter",
+                      font=('Arial', 14, 'bold'),
+                      bg='#04B400',
+                      fg='white',
+                      borderwidth=0,command=get_val)
+    b.place(x=180,y=100)
+
+    page.mainloop()
+
+
+while(com==None):com_page()
+
+while(1):
+    try:
+        ser = serial.Serial(com, 9600)
+        break
+    except:
+        com_page(1)
 
 def prepare_for_parknig(park_n):
-    ser=serial.Serial('COM7',9600)
     # open serial communication port
     # the COM number differs from one device to another
     time.sleep(3)
@@ -15,11 +56,10 @@ def prepare_for_parknig(park_n):
             data_received=str(ser.read(1),'UTF-8')
             # the serial.read is capable of reading up to 100 bytes
             if(data_received=='D'): break
-    ser.close()
+
 
 
 def park(park_n):
-    ser = serial.Serial('COM7', 9600)
     time.sleep(3)
     data_sent = '2' + chr(park_n)
     ser.write(data_sent.encode('Ascii'))
@@ -28,11 +68,9 @@ def park(park_n):
         if (ser.in_waiting):
             data_received = str(ser.read(1), 'UTF-8')
             if (data_received == 'D'): break
-    ser.close()
 
 
 def getcar(park_n):
-    ser = serial.Serial('COM7', 9600)
     time.sleep(3)
     data_sent= '3'+ chr(park_n)
     ser.write(data_sent.encode('Ascii'))
@@ -41,4 +79,3 @@ def getcar(park_n):
         if(ser.in_waiting):
             data_received = str(ser.read(1),'UTF-8')
             if(data_received=='D'): break
-    ser.close()
