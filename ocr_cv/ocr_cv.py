@@ -975,7 +975,7 @@ def ocr_main (id_dimension : tuple = (450 , 316) , id_type_indx : int = 0 ) -> s
 
 	if active_gpu_api == 1 : #Cuda
 		if id_type_indx == 0 : #default id card
-			final_status , scanned_id = read_simple_card_opencl(vid , vid_specs , ids_specs[0])
+			final_status , scanned_id = read_simple_card_opencl(vid , vid_specs , ids_specs[0])#temp use cuda
 		elif id_type_indx == 1 : #TODO: lisence card
 			pass
 		elif id_type_indx == 2 : #TODO: car plate id

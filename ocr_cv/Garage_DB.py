@@ -349,7 +349,7 @@ def park_car_db(conn, cmd, id, temp_pass: str):
 
     else:
         # take id  and get all data FROM people_info table ( NO NEED FOR NOW)
-        query_personal_data = '''SELECT * FROM people_info WHERE id = ?; '''
+        query_personal_data = '''SELECT * FROM people_info WHERE id = ?; ''' 
         cursor.execute(query_personal_data, (id,))
         person_info = cursor.fetchall()
 
@@ -395,18 +395,7 @@ def park_car_db(conn, cmd, id, temp_pass: str):
             conn.close()
             print(" debug message : Failure :) !\n" ,error)
             return -1, -1, -1, -1
-         #   """
-      #   CREATE TABLE IF NOT EXISTS event_log(
-      #   event_id INTEGER PRIMARY KEY AUTOINCREMENT,
-      #   person_id TEXT NOT NULL,
-      #   event_type INTEGER NOt NULL,
-      #   car TEXT NOT NULL,
-      #   cost INTEGER ,
-      #   password_ TEXT,
-      #   timestamp DATETIME DEFAULT CURRENT_TIMESTAMP NOT  NULL,
-      #   FOREIGN KEY (person_id) REFERENCES people_info(id)
-      #   );
-      #   """
+        
 
         # UPDATE parking status table ( take the nearist available parking) and UPDATE total available table
         cursor.execute(
