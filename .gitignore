@@ -5,3 +5,9 @@ __pycache__/
 __pycache__/*
 .vscode/
 .vscode/*
+.mypy_cache/
+.mypy_cache/*
+tempCodeRunnerFile.py
+token.json
+sys_pass.txt
+client_secret.json
