@@ -15,6 +15,8 @@ import os
 import sys
 import random
 import string
+from enm import enm
+import api_gmail as gmail
 
 
 # TODO : Add gmail extension  via : smtp or  yagmail or pygmail python libraries ( ask chat gpt and look your old gmail api to know more)
@@ -113,6 +115,21 @@ def create_db(conn):
    );
    """
     )
+    
+    # table 6 email_queue save emails until gmail connection comes again
+    cursor.execute(
+        """
+   CREATE TABLE IF NOT EXISTS email_queue (
+      queue_cnt INTEGER PRIMARY KEY AUTOINCREMENT ,
+      user_id TEXT,
+      user_email TEXT,
+      msg_content TEXT,
+      push_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+      
+      FOREIGN KEY (user_id) REFERENCES people_info(id)
+   );
+   """
+    )
 
 # 30 test sample of non real people info ( 1st two records is expired and about to expire license for later use)
     cursor.execute(
@@ -124,7 +141,7 @@ def create_db(conn):
       ('94327645058732', 'Fatima Ahmed', 'Nissan Altima 2014',
        '2024-04-31', 'yqgtrmfa@gmail.com'),
       ('54302518496307', 'Abdullah Hassan', 'Honda Accord 2016',
-       '2024-06-30', 'system.python.web@gmail.com'),
+       '2024-06-30', 'omar22xd@gmail.com'),
       ('69301847590631', 'Sara Khalid', 'BMW 750i 2015',
        '2025-05-31', 'yjukrpzt@gmail.com'),
       ('57392618347590', 'Hassan Mohammad',
@@ -254,7 +271,7 @@ def disable_rand_hash_seed() -> 'str':
 def validate_pass(pass_to_check: str, id, cursor: sqlite3.Cursor) -> bool:
 
     #  disable_rand_hash_seed()
-      
+
     #  pass_to_check = str(hash(pass_to_check))
     pass_to_check = str(pass_to_check)
 
@@ -280,6 +297,7 @@ def calc_cost(person_id: str, car: str, conn: sqlite3.Connection):
     """
      get diffrence between parking time and free cell time then mul with cost per hour
 
+-----
     return :
 
     (total_cost_le ,  tot_time_hour)
@@ -326,13 +344,14 @@ def calc_cost(person_id: str, car: str, conn: sqlite3.Connection):
     # return to get_car_db()
     # ( so that get_car_db() return finally to  main code the : cell_id to free  , total cost  , total parking time )
     # change to list [] if you want to easy overwrite
-    return (tot_cost_le , tot_time_hour)
+    return (tot_cost_le, tot_time_hour)
 
 
 ###########################################################################
-
 def park_car_db(conn, cmd, id, temp_pass: str):
-    '''park car command to UPDATE database   return : park_cell_no '''
+    '''park car command to UPDATE database  '
+
+    return : park_cell_no '''
 
     cursor = conn.cursor()
 
@@ -364,19 +383,19 @@ def park_car_db(conn, cmd, id, temp_pass: str):
         person_car = person_info[0][2]
         person_car2 = person_info[0][3]  # no need for now
 
-        # Hash the pass for security before saving in db
+        # Hash the pass for security before saving in db (temprorality disabled)
       #   disable_rand_hash_seed()
       #   pass_hashed = str(hash(temp_pass))
         pass_hashed = str(temp_pass)
         del temp_pass
 
-         # check: you cant park a car then park it again before freeing it!
+        # check: you cant park a car then park it again before freeing it!
         cursor.execute(""" SELECT event_type FROM event_log WHERE person_id = ? AND car = ? ORDER BY event_id DESC
                         """, (person_id, person_car))
         last_event_type = cursor.fetchone()
 
         if type(last_event_type) == tuple:
-           last_event_type = last_event_type[0]
+            last_event_type = last_event_type[0]
 
          # if type == 0 the return fail cuz u cant park an already parked car
         if last_event_type == 0:
@@ -393,25 +412,35 @@ def park_car_db(conn, cmd, id, temp_pass: str):
 
         except sqlite3.Error as error:
             conn.close()
-            print(" debug message : Failure :) !\n" ,error)
+            print(" debug message : Failure :) !\n", error)
             return -1, -1, -1, -1
-         #   """
-      #   CREATE TABLE IF NOT EXISTS event_log(
-      #   event_id INTEGER PRIMARY KEY AUTOINCREMENT,
-      #   person_id TEXT NOT NULL,
-      #   event_type INTEGER NOt NULL,
-      #   car TEXT NOT NULL,
-      #   cost INTEGER ,
-      #   password_ TEXT,
-      #   timestamp DATETIME DEFAULT CURRENT_TIMESTAMP NOT  NULL,
-      #   FOREIGN KEY (person_id) REFERENCES people_info(id)
-      #   );
-      #   """
+
+      # Send email to user with pasrking pass
+        user_name = person_info[0][1]
+        msg_content = f""" Hi {user_name}! Thank you for using Smart Parking service :construction:
+        
+                                parking password :
+                               {pass_hashed}
+               
+                           <span style="color:red;">Note :red_exclamation_mark: : </span>
+                           <em> (if you parked  using  ID scaner  ignore this message . happy day!) </em>
+                         """
+        user_email = person_info[0][4]
+        state = gmail.main_gmail( _to_email= user_email , _msg_title='Parking Passcode :check_mark_button:' , _msg_content= msg_content )
+        
+        if state  != enm.GMAIL_OK : # issue sending so -> push it to email queue  table -> pop it whne  next get same car cmd  comes
+           push_email_query = "INSERT INTO email_queue (user_id , user_email , msg_content) VALUES (? , ? , ?)"
+           cursor.execute(push_email_query , (person_id , user_email , msg_content))
+           conn.commit()
+           
 
         # UPDATE parking status table ( take the nearist available parking) and UPDATE total available table
         cursor.execute(
             '''SELECT cell_id FROM parking_status WHERE status = 0 ORDER BY cell_id ASC;''')
         nearest_empty_cell_id = cursor.fetchone()  # returns tuple with only 1 element
+        
+        if type(nearest_empty_cell_id) == tuple :
+           nearest_empty_cell_id = nearest_empty_cell_id[0]
 
         # you got the id now change status to 1 (occupied) and  taken by who
         cursor.execute(
@@ -422,12 +451,30 @@ def park_car_db(conn, cmd, id, temp_pass: str):
         conn.close()
         # return NOThing important END
         print("debug message : SUCCESS Database has been CHANGED! \n")
-        return nearest_empty_cell_id  # success
-
-
+        return nearest_empty_cell_id  #success
 ###########################################################################
-
-
+def send_pop_unsended_emails( conn : sqlite3.Connection , id : str ) -> enm :
+    cursor = conn.cursor()
+   
+    #check if there is unsended email for this id and send them all (last emails first)
+    get_emails_query = "SELECT * FROM email_queue  WHERE id = ? ORDER BY push_time DESC"
+    cursor.execute(get_emails_query , (id,))
+    user_unsended_emails = cursor.fetchall() #2D tuple of : user_id , user_email ,  msg_content , push_time
+    
+    #now loop on them un send them all 
+    for  email in user_unsended_emails :
+      to_email = email[1]
+      msg_content = email[2]
+      state = gmail.main_gmail( _to_email= to_email , _msg_title='Parking Passcode :check_mark_button:' ,  _msg_content= msg_content )
+      
+      if state == enm.GMAIL_OK :
+         pop_emails_query = "DELETE FROM email_queue WHERE id = ?"
+         cursor.execute(pop_emails_query , (id,))
+         conn.commit()
+      #else : pop them next time ....
+      
+      return state
+###########################################################################
 def get_car_db(conn, cmd, id, pass_to_check: str):
     """
     get car FROM parking command ( free a cell in db )
@@ -440,6 +487,10 @@ def get_car_db(conn, cmd, id, pass_to_check: str):
 
     id : person_id  to get his car
 
+
+
+
+------
     Return :
 
     cell_number : for arduino to move motors
@@ -449,9 +500,10 @@ def get_car_db(conn, cmd, id, pass_to_check: str):
     tot_cost_le : cost in le
 
     tot_time_hour : parking time
-
     """
     cursor = conn.cursor()
+    
+    send_pop_unsended_emails(conn , id)
 
     # query the parking status table  by id
     cursor.execute(
@@ -462,10 +514,9 @@ def get_car_db(conn, cmd, id, pass_to_check: str):
         conn.close()
         print("debug message : FAIL car not found!\n")
         return -1, -1, -1, -1  # fail car not found err
-     
-    if type(cell_data) == list :
-       cell_data = cell_data[0]
-       
+
+    if type(cell_data) == list:
+        cell_data = cell_data[0]
 
     status = cell_data[1]
 
@@ -496,8 +547,7 @@ def get_car_db(conn, cmd, id, pass_to_check: str):
 
             except sqlite3.Error as error:
                 conn.close()
-                print(
-                    "Failed to Insert to  event_log tabel : " , error , "\n")
+                print("Failed to Insert to  event_log tabel : ", error, "\n")
                 return -1, -1, -1, -1  # fail car not found err
 
             # UPDATE parking status table
@@ -509,7 +559,7 @@ def get_car_db(conn, cmd, id, pass_to_check: str):
             # return parking cell number + park cost info
             print("debug message : SUCCESS Database has been CHANGED!\n")
             # change to list [] if you want to easy overwrite
-            return (cell_data[0], True, *calc_cost(id, person_car ,conn))
+            return (cell_data[0], True, *calc_cost(id, person_car, conn))
 
         else:
             print("debug message : Wrong password Database has been CHANGED!\n")
@@ -520,10 +570,17 @@ def get_car_db(conn, cmd, id, pass_to_check: str):
 
 def db_check_ai_id(id_to_chk: str) -> bool:  # NOTE : still not tested
     """
+
+
+    ------
     Returns :
+
     is_found
+
     in caller function / GUIyou must check if this found id is valid id in db is actually the right one
+
     by asking end user in GUI
+
     """
 
     is_found = True
@@ -541,14 +598,20 @@ def db_check_ai_id(id_to_chk: str) -> bool:  # NOTE : still not tested
 
     return is_found
 ###########################################################################
+###########################################################################
+# FUNCTIONS FOR OCR
 
 
 def access_img_table(readOrwrite: bool, img_to_write: np.ndarray = None, img_name: str = "ref_rot_img", ref_id_val: str = '54302518496307'):
     """
     *  readOrwrite == 0 ->read img
     *  readOrwrite == 1 ->write img
+
+    ------
     Returns:
+
             None 	  => if readOrwrite == 1
+
             ref_img => if readOrwrite == 0
     """
     with connect_db() as db:
@@ -571,6 +634,7 @@ def access_img_table(readOrwrite: bool, img_to_write: np.ndarray = None, img_nam
             return ref_img_encoded
 
 
+##########################################################################
 ##########################################################################
 
 def db_cmd(cmd: int, id: str = "NULL", temp_password: str = 'None'):
@@ -605,8 +669,8 @@ if __name__ == "__main__":
     # TEST YOUR CODE
    #   build_db()  # build the sqlite3 db for fist time ( IF BUILT BEFORE SQLITE3 ERROR WILL BE raised )
 
-        # Example: is full
-   print(db_cmd(2))
+    # Example: is full
+    print(db_cmd(2))
 
 # #   Example: park new car with driver id = 54302518496307
 #    db_cmd(0, str(54302518496307), "1234")
