@@ -44,6 +44,7 @@ def park_wait_page():
     p_page_2.configure(bg='#000F35')
     p_page_2.geometry(f"{screen_w}x{screen_h}+0+0")
     p_page_2.title("parking Page.2")
+    p_page_2.iconbitmap('icon_1.ico')
 
     global error_type
     global text_error
@@ -137,6 +138,7 @@ def park_page_1():
     p_page_1.configure(bg='#000F35')
     p_page_1.geometry(f"{screen_w}x{screen_h}+0+0")
     p_page_1.title("parking Page.1")
+    p_page_1.iconbitmap('icon_1.ico')
 
     global error_type
     global text_error
@@ -161,8 +163,11 @@ def park_page_1():
 
     user_info['password']= password
     l_2 = tk.Label(p_page_1,text=f'{password}',font=('Arial',90,'bold'),bg='#000F35',fg='#FAFF00', borderwidth=0)
-    l_2.place(x=(screen_w / 2)-125, y=(screen_h / 4))
+    l_2.place(x=(screen_w / 2)-125, y=(screen_h / 4)-20)
     #####################
+
+    l_4 = tk.Label(p_page_1, text='Password will send to your e-mail.', font=('Arial', 12), bg='#000F35', fg='#04B400',borderwidth=0)
+    l_4.place(x=(screen_w / 2) - 110, y=(screen_h /2)-30)
 
     def b_park_2():
         p_page_1.destroy()
@@ -237,6 +242,7 @@ def get_wait_page():
     g_page_2.configure(bg='#000F35')
     g_page_2.geometry(f"{screen_w}x{screen_h}+0+0")
     g_page_2.title("GET Page.2")
+    g_page_2.iconbitmap('icon_1.ico')
 
     global error_type
     global text_error
@@ -282,6 +288,8 @@ def pay_page():
     pay_p.configure(bg='#000F35')
     pay_p.geometry(f"{screen_w}x{screen_h}")
 
+    pay_p.iconbitmap('icon_1.ico')
+
     global error_type
     global text_error
     if (error_type == 1):
@@ -315,6 +323,7 @@ def password_page():
     password_p.title("get car")
     password_p.configure(bg='#000F35')
     password_p.geometry(f"{screen_w}x{screen_h}")
+    password_p.iconbitmap('icon_1.ico')
 
     global error_type
     global text_error
@@ -402,6 +411,7 @@ def get_car_page():
   get_car.title("get car")
   get_car.configure(bg='#000F35')
   get_car.geometry(f"{screen_w}x{screen_h}")
+  get_car.iconbitmap('icon_1.ico')
 
   global error_type
   global text_error
@@ -503,6 +513,7 @@ def root_page():
     root.geometry(f"{screen_w}x{screen_h}+0+0")
 
     root.title("Home Page")
+    root.iconbitmap('icon_1.ico')
 
     global error_type
     global text_error
