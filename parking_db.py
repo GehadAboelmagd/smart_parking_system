@@ -678,7 +678,7 @@ if __name__ == "__main__":
    #  print(db_cmd(2))
 
     # #   Example: park new car with driver id = 54302518496307
-    db_cmd(1, str(54302518496307), "1234")
+    db_cmd(0 , str(54302518496307), "1234")
 
 #     # wait 30 sec so  we can round it up to 1 houre == 3 pounds cost
 #    time.sleep(2)
