@@ -102,6 +102,23 @@ def make_rectangle_obj( frame : cv2.UMat | np.ndarray , id_dimension : tuple  , 
 	x2 , y2 = x_center + id_dimension[0] // 2 , y_center + id_dimension[1] // 2	
 		#make rec_in_center
 	rec_spec['top_left_coordinate'] , rec_spec['bot_right_coordinate'] = (x1 , y1) , (x2 , y2)
+
+#focus on rectangle and blur all else
+	blur_kernel = (25 , 25)
+
+	#blur whole image save in copy  then take a  rectangle mask from original  then compine vualla! youve blurred outside but inside crsytall clear 
+	blured_1 = cv2.blur( frame_to_show , blur_kernel )
+
+	#mask
+	mask = np.zeros( (h,w) , dtype= np.uint8 )
+	mask[y1:y2 , x1:x2] = 255
+
+	#apply mask
+	frame_masked = cv2.bitwise_and( frame_to_show , frame_to_show , mask= mask) #out is anded with zeroes  leaving only inner with origin values , (2nd param is ref only too keep org channles)
+	blured_1_masked = cv2.bitwise_and(blured_1 , blured_1 , mask= ~mask) #notice the negate in mask= ~mask 
+
+	#compine
+	frame_to_show = cv2.add(frame_masked , blured_1_masked)
 	
 	
 	frame_rect_obj = cv2.rectangle ( frame_to_show , *rec_spec.values() )
@@ -458,19 +475,20 @@ def process_vid_frame( _frame : cv2.UMat | np.ndarray , _id_dimension : tuple , 
 	timer = extraArgs['count'] // frames_to_skip_procs
 	pos = []
  
+	frame_mirrored = cv2.flip(_frame , 1) #to make it easier for user but the original frame is the one we process
 	if extraArgs['count'] % frames_to_skip_procs == 0 :
 		if extraArgs['count'] > 2 :
 			if _is_valid == 1 :
 				
-				frame  , pos  = make_rectangle_obj( _frame , _id_dimension , clr , _frame_shape = extraArgs['frame_shape']  )
-				frame  = make_timer_obj(frame , pos , timer)
-				cv2.imshow("Camera", frame)
+				frame , pos  = make_rectangle_obj( frame_mirrored , _id_dimension , clr , _frame_shape = extraArgs['frame_shape']  )
+				frame  = make_timer_obj(frame_mirrored , pos , timer)
+				cv2.imshow("Camera", frame_mirrored)
 			elif _is_valid2 == 1 :
-				frame2 , pos2 = make_rectangle_obj( _frame , _id_dimension , clr, _frame_shape = extraArgs['frame_shape']  )
+				frame2 , pos2 = make_rectangle_obj( frame_mirrored , _id_dimension , clr, _frame_shape = extraArgs['frame_shape']  )
 				frame2 = make_timer_obj( frame , pos , timer)
 				cv2.imshow("Camera", frame2)
 			else : #show any red
-				frame  , pos  = make_rectangle_obj( _frame , _id_dimension , clr , _frame_shape = extraArgs['frame_shape']  )
+				frame  , pos  = make_rectangle_obj( frame_mirrored , _id_dimension , clr , _frame_shape = extraArgs['frame_shape']  )
 				frame  = make_timer_obj( frame , pos , timer)
 				cv2.imshow("Camera", frame)
 		else :
@@ -714,6 +732,7 @@ def read_simple_card_opencl( vid : cv2.VideoCapture , vid_specs : list , id_card
  
 
 	no_error , frame =  vid.read() #pre-allocate frame to save some overhead
+	frame = cv2.flip(frame , 1)
  
 	if  not no_error :
 		print(f"""
@@ -1065,7 +1084,7 @@ def ocr_main (id_dimension : tuple = (750 , 417) , id_type_indx : int = 0 ) -> s
 if __name__ == "__main__": 
 	#test your code 
 	
-	testing_mode = True
+	testing_mode = False
 	max_rec_frametime_min_fps =  [-1 , 1000]
 	min_rec_frametime_max_fps =  [10000 , -1]
  
