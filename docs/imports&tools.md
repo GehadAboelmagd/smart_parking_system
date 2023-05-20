@@ -19,15 +19,14 @@
 ----
 > ### Donwload non-standard python libraries
 
-* `pip install cv2`
-* `pip install`
+* `pip install opencv-python`
 * `pip install psutil`
-* `pip install cProfile`
+* `pip install CProfileV`
 * `pip install textract`
 * `pip install pyautogui`
 * `pip install numpy`
 * `pip install pytesseract`
-* `pipr install emoji`
+* `pip install emoji`
 
 > ### Download for google Gmail API
 
