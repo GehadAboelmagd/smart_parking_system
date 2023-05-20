@@ -2,15 +2,19 @@
 
 
 ### Built in python libraries 
- * sqlite3
- * multiprocessing 
- * datetime
- * math
- * random
- * string
- * os  , sys , time , io
- * tkinter 
- * serial
+
+* sqlite3
+* multiprocessing 
+* datetime
+* math
+* random
+* string
+* os  , sys , time , io
+* tkinter 
+* serial
+* concurrent.futures
+* json
+* base64
 
 ----
 > ### Donwload non-standard python libraries

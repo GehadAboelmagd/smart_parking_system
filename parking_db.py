@@ -27,12 +27,12 @@ def connect_db():
 
     best to call build_db() instead calling this function directly
     """
-    
+
     # Get the absolute path of the current file
     current_dir = os.path.dirname(os.path.abspath(__file__))
    # Construct a relative path to the 'smart_garage.db' file
     db_path = os.path.join(current_dir, 'data_db', 'smart_garage.db')
-    
+
     db_path = "./database_data/smart_parking.db"
     connect_obj = None
 
@@ -117,7 +117,7 @@ def create_db(conn):
    );
    """
     )
-    
+
     # table 6 email_queue save emails until gmail connection comes again
     cursor.execute(
         """
@@ -252,6 +252,8 @@ def is_full():
             return False  # park is not full
 
 ###########################################################################
+
+
 def validate_pass(pass_to_check: str, id, cursor: sqlite3.Cursor) -> bool:
 
     #  disable_rand_hash_seed()
@@ -401,64 +403,84 @@ def park_car_db(conn, cmd, id, temp_pass: str):
 
       # Send email to user with pasrking pass
         user_name = person_info[0][1]
-        msg_content = f""" Hi {user_name}! Thank you for using Smart Parking service :construction:
+        msg_content = f"""
         
-                                parking password :
-                               {pass_hashed}
-               
-                           <span style="color:red;">Note :red_exclamation_mark: : </span>
+        <p>:construction: Hi <em>{user_name}</em>! Thank you for using Smart Parking service :construction:</p>
+        								  <br>
+                                <p>parking password: {pass_hashed}</p>
+                                <br><br>
+                           <span style="color:red;">Note:red_exclamation_mark:: </span>
                            <em> (if you parked  using  ID scaner  ignore this message . happy day!) </em>
+                           <br>
+                           <sub><sub><sub>testing v2.0B</sub></sub></sub>
                          """
-        user_email = person_info[0][4]
-        state = gmail.main_gmail( _to_email= user_email , _msg_title='Parking Passcode :check_mark_button:' , _msg_content= msg_content )
-        
-        if state  != enm.GMAIL_OK : # issue sending so -> push it to email queue  table -> pop it whne  next get same car cmd  comes
-           push_email_query = "INSERT INTO email_queue (user_id , user_email , msg_content) VALUES (? , ? , ?)"
-           cursor.execute(push_email_query , (person_id , user_email , msg_content))
-           conn.commit()
-           
+        user_email = person_info[0][5]
+        state = gmail.main_gmail(
+            _to_email=user_email, _msg_title='Parking Passcode :check_mark_button:', _msg_content=msg_content)
+        if state != enm.GMAIL_OK:  # issue sending so -> push it to email queue  table -> pop it whne  next get same car cmd  comes
+            push_email_query = "INSERT INTO email_queue (user_id , user_email , msg_content) VALUES (? , ? , ?)"
+            cursor.execute(push_email_query,
+                           (person_id, user_email, msg_content))
+            conn.commit()
 
         # UPDATE parking status table ( take the nearist available parking) and UPDATE total available table
         cursor.execute(
             '''SELECT cell_id FROM parking_status WHERE status = 0 ORDER BY cell_id ASC;''')
         nearest_empty_cell_id = cursor.fetchone()  # returns tuple with only 1 element
-        
-        if type(nearest_empty_cell_id) == tuple :
-           nearest_empty_cell_id = nearest_empty_cell_id[0]
+
+        if type(nearest_empty_cell_id) == tuple:
+            nearest_empty_cell_id = nearest_empty_cell_id[0]
 
         # you got the id now change status to 1 (occupied) and  taken by who
         cursor.execute(
             """ UPDATE parking_status SET status = 1 , taken_by = ? WHERE cell_id = ? ;""",
-            (id, nearest_empty_cell_id[0]))  # or just pass nearest_empty_cell_id
+            (id, nearest_empty_cell_id))  # or just pass nearest_empty_cell_id
         conn.commit()
 
         conn.close()
         # return NOThing important END
         print("debug message : SUCCESS Database has been CHANGED! \n")
-        return nearest_empty_cell_id  #success
+        return nearest_empty_cell_id  # success
 ###########################################################################
-def send_pop_unsended_emails( conn : sqlite3.Connection , id : str ) -> enm :
+
+
+def send_pop_unsended_emails(conn: sqlite3.Connection, id: str) -> enm:
     cursor = conn.cursor()
-   
-    #check if there is unsended email for this id and send them all (last emails first)
-    get_emails_query = "SELECT * FROM email_queue  WHERE id = ? ORDER BY push_time DESC"
-    cursor.execute(get_emails_query , (id,))
-    user_unsended_emails = cursor.fetchall() #2D tuple of : user_id , user_email ,  msg_content , push_time
+
+    # check if there is unsended email for this id and send them all (last emails first)
+    get_emails_query = "SELECT * FROM email_queue  WHERE user_id = ? ORDER BY push_time DESC"
+    cursor.execute(get_emails_query, (id,))
+    # 2D tuple of : user_id , user_email ,  msg_content , push_time
+    user_unsended_emails = cursor.fetchall()
     
-    #now loop on them un send them all 
-    for  email in user_unsended_emails :
-      to_email = email[1]
-      msg_content = email[2]
-      state = gmail.main_gmail( _to_email= to_email , _msg_title='Parking Passcode :check_mark_button:' ,  _msg_content= msg_content )
+   #  queue_cnt INTEGER PRIMARY KEY AUTOINCREMENT ,
+   #    user_id TEXT,
+   #    user_email TEXT,
+   #    msg_content TEXT,
+   #    push_time DATETIME DEFAULT CURRENT_TIMESTAMP,
       
-      if state == enm.GMAIL_OK :
-         pop_emails_query = "DELETE FROM email_queue WHERE id = ?"
-         cursor.execute(pop_emails_query , (id,))
-         conn.commit()
-      #else : pop them next time ....
-      
-      return state
+   #    FOREIGN KEY (user_id) REFERENCES people_info(id)
+   # );
+
+    print ("from email queue : " , user_unsended_emails)#TESTING
+    # now loop on them un send them all
+    for email in user_unsended_emails:
+        to_email = email[2]
+        push_time = email[4]
+        msg_content = email[3] + "<br> <sub><sub> this message is delayed , actual send time was at :  {push_time} </sub></sub>"
+        state = gmail.main_gmail(
+            _to_email=to_email, _msg_title='Parking Passcode :check_mark_button:',  _msg_content= msg_content)
+
+        if state == enm.GMAIL_OK:
+            pop_emails_query = "DELETE FROM email_queue WHERE user_id = ?"
+            cursor.execute(pop_emails_query, (id,))
+            conn.commit()
+        # else : pop them next time ....
+
+        return state
 ###########################################################################
+
+
 def get_car_db(conn, cmd, id, pass_to_check: str):
     """
     get car FROM parking command ( free a cell in db )
@@ -486,8 +508,8 @@ def get_car_db(conn, cmd, id, pass_to_check: str):
     tot_time_hour : parking time
     """
     cursor = conn.cursor()
-    
-    send_pop_unsended_emails(conn , id)
+
+    send_pop_unsended_emails(conn, id)
 
     # query the parking status table  by id
     cursor.execute(
@@ -520,7 +542,6 @@ def get_car_db(conn, cmd, id, pass_to_check: str):
 
             person_data = cursor.fetchall()  # id, name, car_model, license_exp_date
             person_car = person_data[0][2]
-            print(f"testing person car : {person_car}")
 
             try:
                 # register new event in event log table with data you got (event type = free parking cell )
@@ -578,7 +599,7 @@ def db_check_ai_id(id_to_chk: str) -> bool:  # NOTE : still not tested
         temp = cursor.fetchall()
 
         if len(temp) == 0:
-            is_found == False,
+            is_found = False
 
     return is_found
 ###########################################################################
@@ -650,14 +671,14 @@ def db_cmd(cmd: int, id: str = "NULL", temp_password: str = 'None'):
 
 ###########################################################################
 if __name__ == "__main__":
-# TEST YOUR CODE
-     build_db()  # build the sqlite3 db for fist time ( IF BUILT BEFORE SQLITE3 ERROR WILL BE raised )
+    # TEST YOUR CODE
+   #   build_db()  # build the sqlite3 db for fist time ( IF BUILT BEFORE SQLITE3 ERROR WILL BE raised )
 
     # Example: is full
    #  print(db_cmd(2))
 
-# #   Example: park new car with driver id = 54302518496307
-#    db_cmd(0, str(54302518496307), "1234")
+    # #   Example: park new car with driver id = 54302518496307
+    db_cmd(1, str(54302518496307), "1234")
 
 #     # wait 30 sec so  we can round it up to 1 houre == 3 pounds cost
 #    time.sleep(2)

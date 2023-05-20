@@ -534,6 +534,7 @@ def process_vid_frame( _frame : cv2.UMat | np.ndarray , _id_dimension : tuple , 
 	no_deskew = cv2.dilate(no_deskew , kernel= kernel)
 
 
+
 	img_final_deskew = _frame
 	img_final_no_deskew = no_deskew
  
@@ -586,13 +587,14 @@ def search_id( id_char_type : str , scanned_image : str , valid_ids_freq : dict 
 			print (f'scanned_image ibj no. : {len(scanned_image)} ')#TESTING
 			print (f' id_obj: {id_obj}  is numeric? {ok_type} ') #TESTING
    
-		
 		if id_char_type == 'numeric' and ok_type ==  True and sz == 14 : 
 			extracted_id_val = id_obj
 
-
 			db_ok : bool =  db.db_check_ai_id(id_obj)
 
+			if testing_mode == True :
+				print(f"db id_obj check RESULT case 1: {db_ok}") #TESTING
+   
 			# id frequency array to get only most frequent ID
 			if db_ok == True :
 				is_valid = True
@@ -603,6 +605,7 @@ def search_id( id_char_type : str , scanned_image : str , valid_ids_freq : dict 
 			else :
 				continue
 	
+    
 		elif id_char_type == 'numeric' and ok_type : 
      	# in some cases specially with higher good_matches tolerance and --psm 11
       # the ocr separates the id to 2 obj at most (as far as i've detected)
@@ -613,11 +616,40 @@ def search_id( id_char_type : str , scanned_image : str , valid_ids_freq : dict 
    
 			if len(joined_numeric_conseq_obj) == 14 :
 				extracted_id_val = joined_numeric_conseq_obj
+    
+				db_ok : bool =  db.db_check_ai_id(id_obj)
+    
+				if testing_mode == True :
+					print(f"db id_obj check RESULT case 2: {db_ok}") #TESTING
+    
+				if db_ok :
+					is_valid = True
+					if extracted_id_val in valid_ids_freq:
+						valid_ids_freq[extracted_id_val] += 1
+					else:
+						valid_ids_freq[extracted_id_val] = 1
+     
+		elif sz == 14:
+     
+    
+			id_obj = id_obj.replace('S' , '5')
+			id_obj = id_obj.replace('s' , '5')
+			id_obj = id_obj.replace('I' , '1')
+			id_obj = id_obj.replace('l' , '1')
+			extracted_id_val = id_obj
+   
+			db_ok : bool =  db.db_check_ai_id(id_obj)
+   
+			if testing_mode == True :
+				print(f"db id_obj check RESULT case 3: {db_ok}") #TESTING
+   
+			if db_ok :
 				is_valid = True
 				if extracted_id_val in valid_ids_freq:
 					valid_ids_freq[extracted_id_val] += 1
 				else:
 					valid_ids_freq[extracted_id_val] = 1
+
 		else : 
 			pass
 
@@ -677,7 +709,7 @@ def read_simple_card_opencl( vid : cv2.VideoCapture , vid_specs : list , id_card
 	skew_angle = 0
 	frametime = vid_specs[1]
 	#needed in deskew()  (pre-allocate it 'one-time' saves huge overhead)
-	ref_img = get_ref_img_db( img_name= 'ref_rot_img')
+	ref_img = get_ref_img_db( img_name= 'ref_id_img_hassan')
 	ref_img = cv2.UMat(ref_img)
  
 
@@ -772,11 +804,11 @@ def ocr_ready_id( frames_buff: list , frames_deskewed_buff : list , id_card_spec
 	buff2_sz = len(frames_buff)
 	i = max ( buff1_sz , buff2_sz )
 	no_frame_to_ocr = i
+ 
 	if testing_mode == True :
 		print (f"numer of frames to ocr : {i}")
  
 	while i > 0: 
-
 		#OCR USING PYTESSERACT
 		#custom tesser configuration if needed
 		cfg  = "--psm 11 --oem 3" # Sparse text. Find as much text as possible in no particular order.
@@ -858,19 +890,45 @@ def ocr_ready_id( frames_buff: list , frames_deskewed_buff : list , id_card_spec
 	
 
 	
-   
-	max_skewed , max_un_skewed = -1 , -1
+   #noW find if detected an id multiple times but not conseq
+	max_skewed , max_un_skewed = -1 , -1 
+	valid_non_conseq_1 , valid_non_conseq_2 = 0 ,  0
+ 
 	if len(valid_ids_freq) != 0 :
+		valid_non_conseq_1 = max_value = max(valid_ids_freq.values()) 
 		max_skewed = max ( valid_ids_freq ,  key= valid_ids_freq.get )
+  
 		if testing_mode == True :
-			print ( 'max freq 1 ' , max ( valid_ids_freq ))#TESTING 
+			print ( 'max freq 1 ' , max ( valid_ids_freq ,  key= valid_ids_freq.get ))#TESTING 
  
 	if len(valid_ids_freq2) != 0 :
+		valid_non_conseq_2 = max_value = max(valid_ids_freq2.values())  # THIS IS UNSKEWED FRAMES (MORE PROBABLE TO HAVE HIGHER CNT)
 		max_un_skewed = max ( valid_ids_freq2 ,  key= valid_ids_freq2.get )
+  
 		if testing_mode == True :
-			print ( 'max freq 2 ' , max ( valid_ids_freq2 ))#TESTING
+			print ( 'max freq 2 ' , max ( valid_ids_freq2 ,  key= valid_ids_freq2.get ) )#TESTING
+   
+   
+   #now check for valid id frames that are not conseq 
  
-	return False ,  max(int(max_skewed) ,int(max_un_skewed))  #fail but return best guess
+ 
+	if valid_non_conseq_2 >= valid_non_conseq_1:
+		valid_non_conseq_frames = valid_non_conseq_2
+  
+		if valid_non_conseq_frames >= validate_after // 2 :
+			return True ,  max_un_skewed
+		else:
+			return False ,  max_un_skewed   #ALL FAIL but return best guess
+
+	else: 
+		valid_non_conseq_frames = valid_non_conseq_1
+		if valid_non_conseq_frames >= validate_after // 2 :
+			return True , max_skewed   
+		else :
+			return False ,  max_skewed   #ALL FAIL but return best guess
+   
+    
+	
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
  
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
@@ -878,7 +936,7 @@ def ocr_ready_id( frames_buff: list , frames_deskewed_buff : list , id_card_spec
 def save_ref_img_db ( name : str = "ref_id_img_hassan"): #only use manually 
 
 	#Apply same operations that made to image before calling deskew()
-	img_path = r"./ai_data\Abdullah_hassan_22xd_logo.png"
+	img_path = r"./ai_data/abdullah_hassan_22xd.png"
 	path_no_ext , img_format = os.path.splitext(img_path)
 	ref_img = cv2.imread(f"./{img_path}", cv2.IMREAD_GRAYSCALE)
 	ref_img = cv2.bitwise_not(ref_img)
@@ -904,7 +962,7 @@ def get_ref_img_db(img_name : str = "ref_id_img_hassan") -> np.ndarray :
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
  
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
-def ocr_main (id_dimension : tuple = (750 , 616) , id_type_indx : int = 0 ) -> str : 
+def ocr_main (id_dimension : tuple = (750 , 417) , id_type_indx : int = 0 ) -> str : 
 	"""
 	* this function does following (until now):
 
@@ -960,7 +1018,7 @@ def ocr_main (id_dimension : tuple = (750 , 616) , id_type_indx : int = 0 ) -> s
  
 	car_plate_specs  = {
     'id_type' : (2 , "carPlate") ,
-    'id_char' : "Alphanumeric" ,
+    'id_char' : "alphanumeric" ,
     'id_length' : 7  ,
     'id_objects_ordered' : ["egyEng" , "egyArb"  , "nums" , "alpha"] ,
     'dimension' : id_dimension
@@ -970,7 +1028,7 @@ def ocr_main (id_dimension : tuple = (750 , 616) , id_type_indx : int = 0 ) -> s
 
 
 	final_value = None 
-	vid, *vid_specs = video_settings_setup( vid_length_sec= 15  )
+	vid, *vid_specs = video_settings_setup( vid_length_sec= 20  )
 	active_gpu_api = vid_specs[3]
 
 	if active_gpu_api == 1 : #Cuda
@@ -1017,5 +1075,5 @@ if __name__ == "__main__":
 	# print(f"previous was you ocr_main() report: {cProfile.run('ocr_main(id_dimension= (320 , 240 ))' , filename=r'./extra/light_ocr_perfo_rep')}")
 	
 	#save imgs to db for first time after rebuilding db
-	# save_ref_img_db (name= "ref_rot_img")
+	# save_ref_img_db ()
 	# save_ref_img_db (name= "original")
