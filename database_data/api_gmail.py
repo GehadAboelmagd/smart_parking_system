@@ -2,37 +2,44 @@
                           Coder : ENG.Omar
                           Version : v2.0B
                           version Date :  19 / 5 / 2023
-                          Code Type : python 
+                          Code Type : python
                           Title : Smart Parking System
                           Interpreter : cPython  v3.11.0 [Compiler : MSC v.1933 AMD64]
 """
 ''' This uses shared google cloud project  with msp mini college system proj & parking smart system temproraily '''
 
+
+# from enm import enm
+
+# for google api
+# from google.oauth2.service_account import Credentials as ServiceCredentials #not needed now
+
+# mime library for more rich message from email.mime.multipart import MIMEMultipart
+# from email.message import Message #for simpler messages
+
+# mime types map (attach any file type)
+from emoji import emojize
+from email.mime.application import MIMEApplication
 import getpass
 import os.path
 import sys
 import ssl
 import smtplib
-
 from .enm import enm
-
-# for google api
-# from google.oauth2.service_account import Credentials as ServiceCredentials #not needed now 
+import base64
+import google.auth
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials as UserCredentials
+from google.oauth2 import service_account
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-
-#mime library for more rich message from email.mime.multipart import MIMEMultipart
-# from email.message import Message #for simpler messages
 from email.mime.text import MIMEText
 from  email.mime.image import MIMEImage
-from email.mime.multipart import MIMEMultipart # for complex messages 
-from email.mime.application import MIMEApplication
-from emoji import emojize
+from email.mime.multipart import MIMEMultipart # for complex messages
+import concurrent.futures
+import json
 
-#mime types map (attach any file type)
 mime_types = {
     '.ai': 'postscript',
     '.avi': 'x-msvideo',
@@ -70,28 +77,47 @@ mime_types = {
 
 
 # If modifying these scopes, delete the file token.json.
-SCOPES = ['https://www.googleapis.com/auth/gmail.send', 'https://www.googleapis.com/auth/gmail.readonly']
+SCOPES = ['https://www.googleapis.com/auth/gmail.send',
+    'https://www.googleapis.com/auth/gmail.readonly']
 
+###################################################################################################
+def refresh_credentials(creds):
+    creds.refresh(Request())
 ###################################################################################################
 def gmail_setup():
 	creds = None
 	# The file token.json stores the user's access and refresh tokens, and is
 	# created automatically when the authorization flow completes for the first time
-	
-	if os.path.exists('token.json'):
-		creds = UserCredentials.from_authorized_user_file('./data_db/token.json', SCOPES)
-		
-	# If there are no (valid) credentials available, let the user log in.
-	if not creds or not creds.valid:
-		if creds and creds.expired and creds.refresh_token:
-			creds.refresh(Request())
-		else:
-			flow = InstalledAppFlow.from_client_secrets_file('./data_db/client_secret.json', SCOPES)
-				
-			creds = flow.run_local_server(port=0)
-		# Save the credentials for the next runs
-		with open('token.json', 'w') as token:
-			token.write(creds.to_json())
+
+	if os.path.exists('./token.json'):
+		creds = UserCredentials.from_authorized_user_file(
+		    './token.json', SCOPES)
+
+	try:
+		# If there are no (valid) credentials available, let the user log in.
+		if not creds or not creds.valid:
+			if creds and creds.expired and creds.refresh_token:
+				try:
+					with concurrent.futures.ThreadPoolExecutor() as executor:
+						future = executor.submit(refresh_credentials, creds)
+						future.result(timeout=90)  # Set a timeout of 1.5 minute
+					return enm.GMAIL_OK
+  
+				except concurrent.futures.TimeoutError as e:
+					print(f"An error occurred in app/gmail auth stage : {e}")
+					return enm.GMAIL_BAD
+ 
+			else:
+				flow = InstalledAppFlow.from_client_secrets_file('./client_secret.json', SCOPES)
+					
+				creds = flow.run_local_server(port=0)
+			# Save the credentials for the next runs
+			with open('token.json', 'w') as token:
+				token.write(creds.to_json())
+    
+	except Exception as e:
+		print(f"An error occurred in app/gmail auth stage : {e}")
+		return enm.GMAIL_BAD
 
 	try:
 	# Call the Gmail API
@@ -134,6 +160,8 @@ def get_sys_pass( is_auto : bool = True ) :
 def main_gmail(  _to_email : str , _from_email = "system.python.web@gmail.com" , _msg_title = 'Operation Status :check_mark_button:' ,  _msg_content = "empty msg"  , attach_file = False  , file_path : str = None) -> enm: 
 	print ( "Starting  new Connection session with Gmail API... \n\n")
  
+	message = None
+	server = None
 	state = gmail_setup() #validate that google auth your program through a saved carden file
 	if  state == enm.GMAIL_OK : 
 		print ("*SUCESSS: Gmail-API Granted Access to The System Succesfully!* \n\n")
@@ -146,7 +174,7 @@ def main_gmail(  _to_email : str , _from_email = "system.python.web@gmail.com" ,
 		from_sys_gmail = _from_email
 		to_gmail = _to_email
 		sys_key = None
-		with open('./sys_pass.txt' , 'r') as file:
+		with open('./database_data/sys_pass.txt' , 'r') as file:
 			sys_key = file.read().strip()
 
 		
@@ -191,6 +219,9 @@ def main_gmail(  _to_email : str , _from_email = "system.python.web@gmail.com" ,
 		#send email
 		server.send_message(message , from_sys_gmail , to_gmail) #send right formatted email
   
+		print (f"*SUCESSS: Email Has been sent to {to_gmail} * \n\n")#is sended will execute those two lines if not will go to except
+		return enm.GMAIL_OK #sucess
+  
 		# message = _msg_content
 		# server.sendmail(from_sys_gmail , to_gmail_add , message) #send row string email
 
@@ -206,18 +237,19 @@ def main_gmail(  _to_email : str , _from_email = "system.python.web@gmail.com" ,
 		
 
 	finally : 
-		print (f"*SUCESSS: Email Has been sent to {to_gmail} * \n\n")
-  
 		print("*Gmail Session Ended* \n Deleting Cached User Data & Quiting session ...\n\n")
 		del to_gmail #clear for end user data security
 		del from_sys_gmail 
-		del message
-		server.quit()
-		return enm.GMAIL_OK #sucess
+
+		if message is not None :
+			del message
+		if server is not None :
+			server.quit()
+
 
 if __name__ == '__main__':
 
 	#TESTING
 	tst_email = "omar1xd@gmail.com"
 	tst_msg ="hi this is test message from api_gmail.py omar code  :automobile: :construction: (dont reply)"
-	main_gmail( _to_email = tst_email  ,  _msg_content = tst_msg )
+	# main_gmail( _to_email = tst_email  ,  _msg_content = tst_msg )

@@ -174,7 +174,7 @@ def park_page_1():
         global  text_error
         if(user_info['park_cell']==-1):
             error_type = 1
-            text_error = f'User id {user_info["id"]} , NOT found or Parking before .'
+            text_error = f'User id {user_info["id"]} , NOT found or Already in Parking .'
             root_page()
             return 0
 

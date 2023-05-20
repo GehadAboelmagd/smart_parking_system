@@ -14,12 +14,12 @@ com = None
 def com_page(error=0):
     page = tk.Tk()
     page.geometry(f"400x150+500+200")
-    page.title("Com page")
+    page.title("Controller Com page")
 
     if(error==1):
         tk.Label(page, text='Wrong com', font=('Arial', 10),fg='red').place(x=5, y=5)
 
-    l_e = tk.Label(page,text='Entry Com',font=('Arial', 14, 'bold'))
+    l_e = tk.Label(page,text='Enter  Com Port',font=('Arial', 14, 'bold'))
     l_e.place(x=160,y=20)
 
     entry = tk.Entry(page,)
