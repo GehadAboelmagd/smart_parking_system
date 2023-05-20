@@ -69,6 +69,8 @@ def make_rectangle_obj( frame : cv2.UMat | np.ndarray , id_dimension : tuple  , 
   
 		3. define rectangle object to be rendered on video frame
   
+		4. any thing ouside rectanble is blurred
+  
   ---
 
 		* Returns:
@@ -104,20 +106,20 @@ def make_rectangle_obj( frame : cv2.UMat | np.ndarray , id_dimension : tuple  , 
 	rec_spec['top_left_coordinate'] , rec_spec['bot_right_coordinate'] = (x1 , y1) , (x2 , y2)
 
 #focus on rectangle and blur all else
-	blur_kernel = (25 , 25)
+	blur_kernel = (10 , 10)
 
 	#blur whole image save in copy  then take a  rectangle mask from original  then compine vualla! youve blurred outside but inside crsytall clear 
 	blured_1 = cv2.blur( frame_to_show , blur_kernel )
 
 	#mask
-	mask = np.zeros( (h,w) , dtype= np.uint8 )
+	mask = np.zeros( (frame_shape[0] , frame_shape[1]) , dtype= np.uint8 )
 	mask[y1:y2 , x1:x2] = 255
 
 	#apply mask
 	frame_masked = cv2.bitwise_and( frame_to_show , frame_to_show , mask= mask) #out is anded with zeroes  leaving only inner with origin values , (2nd param is ref only too keep org channles)
 	blured_1_masked = cv2.bitwise_and(blured_1 , blured_1 , mask= ~mask) #notice the negate in mask= ~mask 
 
-	#compine
+ 	#compine
 	frame_to_show = cv2.add(frame_masked , blured_1_masked)
 	
 	
@@ -220,7 +222,7 @@ def video_settings_setup (cam_indx : int  = 0, fps : int = 30 , vid_length_sec :
 	* NOTE 2:
  
 		* active_gpu_api == 0 (no active accel api)
-		* active_gpu_api == 1 (Cuda)
+		* active_gpu_api == 1 (Cuda) (disabled for now)
 		* active_gpu_api == 2 (OpenCL)
   
   ---
@@ -437,11 +439,18 @@ def deskew_img(  img_to_skew : np.ndarray , ref_img : np.ndarray , **extraArgs )
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
 def process_vid_frame( _frame : cv2.UMat | np.ndarray , _id_dimension : tuple , _is_valid ,  _is_valid2 , _ref_img : cv2.UMat | np.ndarray , **extraArgs) -> cv2.UMat | np.ndarray :
 	"""
+	0. img is mirrored only for user 
+ 
 	0. cvt to gray-scale
+ 
 	1. inv frame
+ 
 	2. threshold fram
+ 
 	3. deskew frame
+ 
 	4. sharpen the frame
+ 
 	5. dilate frame by one itteration 
 
 #### NOTE: image background black and foreground is white and foreground is what we need this makes ocr better 
@@ -477,24 +486,25 @@ def process_vid_frame( _frame : cv2.UMat | np.ndarray , _id_dimension : tuple , 
  
 	frame_mirrored = cv2.flip(_frame , 1) #to make it easier for user but the original frame is the one we process
 	if extraArgs['count'] % frames_to_skip_procs == 0 :
-		if extraArgs['count'] > 2 :
-			if _is_valid == 1 :
-				
-				frame , pos  = make_rectangle_obj( frame_mirrored , _id_dimension , clr , _frame_shape = extraArgs['frame_shape']  )
-				frame  = make_timer_obj(frame_mirrored , pos , timer)
-				cv2.imshow("Camera", frame_mirrored)
-			elif _is_valid2 == 1 :
-				frame2 , pos2 = make_rectangle_obj( frame_mirrored , _id_dimension , clr, _frame_shape = extraArgs['frame_shape']  )
-				frame2 = make_timer_obj( frame , pos , timer)
-				cv2.imshow("Camera", frame2)
-			else : #show any red
-				frame  , pos  = make_rectangle_obj( frame_mirrored , _id_dimension , clr , _frame_shape = extraArgs['frame_shape']  )
-				frame  = make_timer_obj( frame , pos , timer)
-				cv2.imshow("Camera", frame)
-		else :
-			pos = get_pos(extraArgs['frame_shape'] , _id_dimension)
-			frame = cv2.imread("./data_ai/progress.jpg") 
+		if _is_valid == True :
+			
+			frame , pos  = make_rectangle_obj( frame_mirrored , _id_dimension , clr , _frame_shape = extraArgs['frame_shape']  )
+			frame  = make_timer_obj(frame_mirrored , pos , timer)
+			cv2.imshow("Camera", frame_mirrored)
+		elif _is_valid2 == True :
+			frame2 , pos2 = make_rectangle_obj( frame_mirrored , _id_dimension , clr, _frame_shape = extraArgs['frame_shape']  )
+			frame2 = make_timer_obj( frame , pos , timer)
+			cv2.imshow("Camera", frame2)
+		else : #show any red
+			frame  , pos  = make_rectangle_obj( frame_mirrored , _id_dimension , clr , _frame_shape = extraArgs['frame_shape']  )
+			frame  = make_timer_obj( frame , pos , timer)
 			cv2.imshow("Camera", frame)
+		skip = False
+	elif extraArgs['count'] < 2:
+		pos = get_pos(extraArgs['frame_shape'] , _id_dimension)
+		processing = cv2.imread("./ai_data/progress.png") 
+		processing = cv2.resize(processing , (extraArgs['frame_shape'][1] , extraArgs['frame_shape'][0]))
+		cv2.imshow("Camera", processing)
 		skip = False
   
 	else: 
@@ -505,8 +515,8 @@ def process_vid_frame( _frame : cv2.UMat | np.ndarray , _id_dimension : tuple , 
 		return skip , skip , skip , skip
 
 	if testing_mode == True : #TESTING
-				print( f"skip frame? {skip}")
-				print( f"angle? {skew_angle}")
+		print( f"skip frame? {skip}")
+		print( f"angle? {skew_angle}")
     
 	x1 , y1 = pos[0][0] , pos[0][1]
 	x2 , y2 = pos[1][0] , pos[1][1]
@@ -1005,7 +1015,7 @@ def ocr_main (id_dimension : tuple = (750 , 417) , id_type_indx : int = 0 ) -> s
 
 		7. return the ocr(ed) ID card number
 
-	* Default id shape is : ( 450 x 316 ) (x,y) (later this will ocr car plates and license)
+	* Default id shape is : ( 750 x 417 ) (x,y) (later this will ocr car plates and license)
 		actual size of our test id card image is 400 x 266
 		 id_type_inx -> default id == 0 , lisence id  == 1  , car plate id == 2
 
