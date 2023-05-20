@@ -1,12 +1,19 @@
 ﻿################################################################################
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
+
+#IGNORED DIRS
 __pycache__/
 __pycache__/*
 .vscode/
 .vscode/*
 .mypy_cache/
 .mypy_cache/*
+samples_bold_spaces/
+samples_bold_spaces/*
+
+
+#IGNORED FILES
 tempCodeRunnerFile.py
 token.json
 sys_pass.txt
