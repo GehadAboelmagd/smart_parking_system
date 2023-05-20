@@ -15,6 +15,7 @@ def com_page(error=0):
     page = tk.Tk()
     page.geometry(f"400x150+500+200")
     page.title("Controller Com page")
+    page.iconbitmap('icon_1.ico')
 
     if(error==1):
         tk.Label(page, text='Wrong com', font=('Arial', 10),fg='red').place(x=5, y=5)
