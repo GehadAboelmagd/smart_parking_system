@@ -19,7 +19,7 @@
 ----
 > ### Donwload non-standard python libraries
 
-* `pip install cv2`
+* `pip install opencv-python`
 * `pip install`
 * `pip install psutil`
 * `pip install cProfile`
