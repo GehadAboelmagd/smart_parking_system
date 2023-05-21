@@ -59,4 +59,4 @@
   * [Hardware Components](docs/Hardware_components.md) 
 
 
-
+<sub><sub>📍Interpreter version **Python** : _cPython  v3.11.0 [Compiler : MSC v.1933 AMD64]_  || **Arduinno IDE** : _v2.0.4_ 📍
