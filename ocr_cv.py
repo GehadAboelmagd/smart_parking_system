@@ -34,8 +34,8 @@ def make_timer_obj ( frame : cv2.UMat | np.ndarray , id_pos : tuple , timer : in
 		frame with reactangle and timer obj
 	'''
  
-	x1 = id_pos[0][0] + 500 #magic nums or text offset from center rectangle
-	y2 = id_pos[1][1] + 600
+	x1 = id_pos[0][0] + 500 #magic nums are text offset from center rectangle
+	y2 = id_pos[1][1] + 630
  
 	if timer > 2  :
 		text = str(timer)  + 's'
