@@ -462,12 +462,11 @@ def send_pop_unsended_emails(conn: sqlite3.Connection, id: str) -> enm:
    #    FOREIGN KEY (user_id) REFERENCES people_info(id)
    # );
 
-    print ("from email queue : " , user_unsended_emails)#TESTING
     # now loop on them un send them all
     for email in user_unsended_emails:
         to_email = email[2]
         push_time = email[4]
-        msg_content = email[3] + "<br> <sub><sub> this message is delayed , actual send time was at :  {push_time} </sub></sub>"
+        msg_content = email[3] + f"<br> <sub><sub> this message is delayed , actual send time was at :  {push_time} </sub></sub>"
         state = gmail.main_gmail(
             _to_email=to_email, _msg_title='Parking Passcode :check_mark_button:',  _msg_content= msg_content)
 
@@ -690,4 +689,4 @@ if __name__ == "__main__":
 #    print("Total prking cost : ", cell_id_pass_cost_time[2])
 #    print("Total time on parking : ", cell_id_pass_cost_time[3])
 
-	
+

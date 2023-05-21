@@ -166,7 +166,7 @@ def park_page_1():
     l_2.place(x=(screen_w / 2)-125, y=(screen_h / 4)-20)
     #####################
 
-    l_4 = tk.Label(p_page_1, text='Password will send to your e-mail.', font=('Arial', 12), bg='#000F35', fg='#04B400',borderwidth=0)
+    l_4 = tk.Label(p_page_1, text='Password will be sent to your E-mail.', font=('Arial', 12), bg='#000F35', fg='#04B400',borderwidth=0)
     l_4.place(x=(screen_w / 2) - 110, y=(screen_h /2)-30)
 
     def b_park_2():
@@ -179,7 +179,7 @@ def park_page_1():
         global  text_error
         if(user_info['park_cell']==-1):
             error_type = 1
-            text_error = f'User id {user_info["id"]} , NOT found or Already in Parking .'
+            text_error = f'User ID \'{user_info["id"]}\' Not found or Already in Parking .'
             root_page()
             return 0
 
@@ -227,7 +227,7 @@ def park_button():
 
     if(id[1]):
         error_type = 2
-        text_error = f'Your id is {id[0]}'
+        text_error = f'Your ID is {id[0]}'
         park_page_1()
     else:
         error_type = 1
@@ -307,10 +307,10 @@ def pay_page():
         pay_p.destroy()
         get_wait_page()
 
-    tk.Label(pay_p,text=f"Time: {get_info[3]}  hours ",font=('Arial',20,'bold'),bg='#000F35',fg='white').place(x=(screen_w / 2)-100, y=(screen_h / 4)+100)
-    tk.Label(pay_p,text=f"Cost:  {get_info[2]}  $",font=('Arial',20,'bold'),bg='#000F35',fg='white').place(x=(screen_w / 2)-100, y=(screen_h /4)+200 )
+    tk.Label(pay_p,text=f"Parking Time: {get_info[3]}  hour/s ",font=('Arial',20,'bold'),bg='#000F35',fg='white').place(x=(screen_w / 2)-95, y=(screen_h / 4)+100)
+    tk.Label(pay_p,text=f"Parking Cost:  {get_info[2]}  $",font=('Arial',20,'bold'),bg='#000F35',fg='white').place(x=(screen_w / 2)-95, y=(screen_h /4)+200 )
     pay_b=tk.Button(pay_p,
-               text="pay",
+               text="Pay ",
                 font=('Arial', 16, 'bold'),
                 bg='#04B400',
                 fg='white',
@@ -376,7 +376,7 @@ def password_page():
         #get_info = (2, True, 50, 5)
 
         if (get_info[0] == -1):
-            messagebox.showwarning("Warning", "Not exist user")
+            messagebox.showwarning("Warning", " User Doesn't Exist or Didn't Park here")
             return 0
         password_p.destroy()
         pay_page()
@@ -434,6 +434,7 @@ def get_car_page():
 
       global ocr_info
       global get_info
+      
       ocr_cv.sec_passed = 0
       ocr_info = ocr_cv.ocr_main()
       #ocr_info=('11111111111111',True)
@@ -448,7 +449,7 @@ def get_car_page():
 
           if (get_info[0] == -1):
               error_type = 1
-              text_error = f'Not found id : {ocr_info[0]},Use password'
+              text_error = f'ID  \'{ocr_info[0]}\' not found . Try Using password instead'
               get_car_page()
               return 0
 
@@ -457,7 +458,7 @@ def get_car_page():
           pay_page()
       else:
           error_type = 1
-          text_error = f'Not found id : {ocr_info[0]},Use password'
+          text_error = f'ID  \'{ocr_info[0]}\' not found . Try Using password instead'
           get_car_page()
       ##############
 
@@ -538,7 +539,7 @@ def root_page():
 
     def get_car_button(): root.destroy();get_car_page()
     #define getcar button
-    b_get = tk.Button(root, text='GetCar',font=('Arial',16,'bold'),bg='#D40101',fg='white', borderwidth=0)
+    b_get = tk.Button(root, text='Get Car',font=('Arial',16,'bold'),bg='#D40101',fg='white', borderwidth=0)
     b_get.configure(command=get_car_button)
     b_get.place(x=(screen_w/2)-70,y=(screen_h/4)*3-50,width=screen_w/9,height=screen_h/15)
     ###################################
