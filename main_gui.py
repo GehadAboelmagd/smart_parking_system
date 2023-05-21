@@ -217,6 +217,7 @@ def park_button():
 
     root.destroy()
     ocr_cv.testing_mode = False
+    ocr_cv.sec_passed = 0
     id = ocr_cv.ocr_main()
     #id=('11111111111111',True)
     user_info['id']=id[0]
@@ -433,6 +434,7 @@ def get_car_page():
 
       global ocr_info
       global get_info
+      ocr_cv.sec_passed = 0
       ocr_info = ocr_cv.ocr_main()
       #ocr_info=('11111111111111',True)
 
