@@ -13,6 +13,19 @@
 
  </details> 
  
+ <details>
+<summary><em>  👥Project Members </em> </summary>
+	
+  * [Gehad](https://github.com/Gehad-AboElmagd)
+  * [Omar](https://github.com/orsnaro)  
+  * [Asmaa](https://github.com/Asmaaramadan1)
+  * [Mahmoud](https://github.com/mahmoudSh58) 
+  * [Mohamed](https://github.com/MohamedMohamedSaleh)
+  * [Hager](https://github.com/hagartamer)
+  * Nour
+
+ </details> 
+ 
 ---
 
 > ### 📣 Beta (v2.0) is out!
