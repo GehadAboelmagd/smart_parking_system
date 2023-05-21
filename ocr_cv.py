@@ -24,6 +24,7 @@ import multiprocessing as mp
 # TODO : finish CUDA accel function and use it in ocr_main()
 # TODO : car plate / license id simple  template detection
 # TODO : tracking 
+# TODO : fix skew_angle most of time return 1 (some thing fails in de skew proccess)
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
 
 
@@ -37,7 +38,7 @@ def make_timer_obj ( frame : cv2.UMat | np.ndarray , id_pos : tuple , timer : in
 	x1 = id_pos[0][0] + 500 #magic nums are text offset from center rectangle
 	y2 = id_pos[1][1] + 630
  
-	if timer > 2  :
+	if timer > 1  :
 		text = str(timer)  + 's'
 		font = cv2.FONT_HERSHEY_SIMPLEX
 		font_scale = 1
@@ -84,7 +85,7 @@ def make_rectangle_obj( frame : cv2.UMat | np.ndarray , id_dimension : tuple  , 
 	rec_spec = {
 		'top_left_coordinate'  : tuple , 
 		'bot_right_coordinate' : tuple  ,
-		'color' : (red if color == 'red' else green ), 
+		'color' : red if color == 'red' else green , 
 		'thickness' : 1 ,
 		}
  
@@ -309,20 +310,19 @@ def compare_img ( img_to_comp : np.ndarray  , ref_img : np.ndarray) -> list :
 
 #NOTE: MATCH and save best matches
 
-	if testing_mode == True : #TESTING
-		print (f"ref_desc type : {type(ref_desc)}  img_desc  type {type(img_desc)}")
-
 	matched_descs = match_obj.match(ref_desc , img_desc) 
 	#match() returns DMatch_Obj = [img_desc_indx , ref_img_desc_indx , distance]
 	
 	matched_descs = sorted(matched_descs , key= lambda x : x.distance) # each x is a matched_descs obj
 	
-	tolerance = 16
+	if testing_mode == True : #TESTING
+		print (f"ref_desc type : {type(ref_desc)}  img_desc  type {type(img_desc)}")
+		print (f"Tot number of matched descriptors before filter {len(matched_descs)}")
+  
+  
+	tolerance = 50  #TODO : tune this value #TODO : try cross checking descs
 	good_matches = matched_descs[:tolerance] #get only best n matches (smallest distance)
  
-	if testing_mode == True :
-		print (f"tot number of matched descs: {len(matched_descs)}") #TESTING
-	
 	return ( good_matches , (ref_kp , img_kp) )
  
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
@@ -333,8 +333,8 @@ def get_trans_mat( good_matches : cv2.DMatch  , key_points : tuple ) -> np.ndarr
 	# [ cos(theta)  -sin(theta)  0 ]
 	# [ sin(theta)   cos(theta)  0 ]
 	# [     0            0       1 ]
-	#trans. mat will be pure rotation mat (like above) 
-	# if and ONLY if the image is only rotated  with no any other transformation
+	#trans. mat will be pure rotation mat  (like above) 
+	# if and ONLY if the image is only rotated (there is angle between x-axis and y-axis only) with no any other transformation
 	ref_kp , img_kp = key_points
 
 	ref_good_pts = np.float32( [ref_kp[m.queryIdx].pt for m in good_matches] ) # 'pt' is the pixel coordinate of a keypoint
@@ -343,20 +343,36 @@ def get_trans_mat( good_matches : cv2.DMatch  , key_points : tuple ) -> np.ndarr
 	img_good_pts = np.float32( [img_kp[m.trainIdx].pt for m in good_matches] )
 	img_good_pts = img_good_pts.reshape(-1,1,2)
 
-	#NOTE: in finHomography() function: cv2.RANSAC is a (match outlier excluder Algorithm) and 5.0 is the thresholder
-	trans_mat , choosed_matches_mask = cv2.findHomography(  ref_good_pts , img_good_pts , cv2.RANSAC , 5.0 ) 
+	#NOTE: in findHomography() function: cv2.RANSAC is a (match outlier excluder Algorithm) and 5.0 is the thresholder
+	trans_mat , choosed_matches_mask = cv2.findHomography(  ref_good_pts , img_good_pts , cv2.RANSAC , 6.0 )  #TODO: tune thresh between 1 to 10 (increments of 1 or 0.5)
 	
 	return trans_mat 
 
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
 def get_skew_angle( homograph_rot_mat : np.ndarray , img_to_skew_shape : tuple ) -> tuple:
 	"""
-#### Pure rotation mat should look like :
+#### Pure rotation mat  angle between x-axis and y-axis only  should look like :
+*  other  that affine transformation  mat could have : scaling , skew , translation and rotation -> could be either one or multiple in one mat depending on image
+
+actually its get_rotation_angle and there is diff between skew and rot angle but for sake of simplicity we use lossy more general var naming in this code
   
 |  [ cos(theta) | -sin(theta)| 0 ]  	|
 | ------- 		 | --- 		  | ---     |
 |  [ sin(theta) | cos(theta) | 0 ] 		|
 |  [     0 		 | 0 			  | 1 ]		|
+
+* NOTE: 2x2 upper left sub mat Details : (its the rotation matrix between x & y axis ):
+
+	* assume only 2D-Plane: original ref img is at x1,y1  -> x1 = rcos(phi) , y1 = rsin(phi)
+	* scanned image  at x2 , y2 -> rcos(phi + theta ) , rsin(phi + theta)
+	* expand and use trig. identity and substitution
+	* final formula looks like:
+ 
+		* x2 = x1cos(theta)  -y1sin(theta)  
+		* y2 = x1sin(theta)  +y1cos(theta)
+	* and this is almost the 2x2 upper sub matrix (easy right?) 
+	* what we want is rot angle (named here and in all code by acc 'skew_angle' tho they are not the same)
+	* where is rot_angle then ? its the theta ! just get it -> the angle between the ref. img and scanned img is the wanted rot_angle
 
 ---
 ---
@@ -366,14 +382,28 @@ def get_skew_angle( homograph_rot_mat : np.ndarray , img_to_skew_shape : tuple )
 
 	if fail return -1 , -1
 	"""
-	if type (homograph_rot_mat) != type(None) :
-		sine = homograph_rot_mat [1 , 0]
-		cos  = homograph_rot_mat [0 , 0]
-		skew_angle = np.arctan2(sine , cos) * (180 / np.pi)
+	if type (homograph_rot_mat) != type(None) or homograph_rot_mat is not None :
+    
+		if homograph_rot_mat[0, 1] != -homograph_rot_mat[1, 0]:
+			if testing_mode == True :
+				print ( f"This image has complex transformation")#TESTING
+   
+			# If not, calculate the skew angle using the SVD decomposition of the rotation matrix
+			U, S, Vt = np.linalg.svd(homograph_rot_mat[:2, :2])
+			unitary = U @ Vt
+			skew_angle = np.arctan2(unitary[1, 0], unitary[0, 0]) * (180 / np.pi)
+		else:
+			if testing_mode == True :
+				print ( f"this image had lite transfromation moslty rotation")#TESTING
+   
+			# If the rotation matrix is a pure rotation matrix, calculate the skew angle using the sine and cosine of the rotation angle
+			sine = homograph_rot_mat[1, 0]
+			cosine = homograph_rot_mat[0, 0]
+			skew_angle = np.arctan2(sine, cosine) * (180 / np.pi)
 
 		if testing_mode == True :
 			print ( f"IMAGE ROTATION ANGLE IS : {skew_angle} DEGREES")#TESTING
-
+   
 
 	else :
 		return -1 , -1 #skip this frame
@@ -392,7 +422,7 @@ def affine_trans ( _skew_angle : int , img_coord : tuple , _image_to_skew : np.n
  
 	affine_rot_mat = cv2.getRotationMatrix2D(center , _skew_angle , scale= 1.0) #1.0 is image scale factor
 	rotated_img = cv2.warpAffine(_image_to_skew , affine_rot_mat , (w,h) , flags= cv2.INTER_CUBIC, borderMode= cv2.BORDER_REPLICATE )
-	deskewed_img = rotated_img
+	deskewed_img = rotated_img #TODO : try cv2.warpPrespective()
  
 	return deskewed_img
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
@@ -432,7 +462,8 @@ def deskew_img(  img_to_skew : np.ndarray , ref_img : np.ndarray , **extraArgs )
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
  
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
-sec_passed = 0
+skipped_cnt = 0 #TESTING
+sec_passed = 1
 def process_vid_frame( _frame : cv2.UMat | np.ndarray , _id_dimension : tuple , _is_valid ,  _is_valid2 , _ref_img : cv2.UMat | np.ndarray , **extraArgs) -> cv2.UMat | np.ndarray :
 	"""
 #### Main process in the function :
@@ -466,60 +497,69 @@ def process_vid_frame( _frame : cv2.UMat | np.ndarray , _id_dimension : tuple , 
 	clr = None
 
 
-	if -5 <= int(skew_angle) <= 5:
-		clr = "green"
-	else :
-		clr =  "red"
-
-	if testing_mode == True :
-		print (f"TESTING 'process_vid_frame()' near line '480' -> rect (color , rotation angle) : {clr , skew_angle}")
-
-	frames_to_skip_procs = extraArgs['fps']
+	shown_timer_control_var = extraArgs['fps']
+	shown_frames_control_var = 2 #2 here shows half of frames if pc can render this fast , 3 show 1/3 of tot frames ...
+	frames_to_skip_procs  = extraArgs['timer_sec'] // 1.5  #NOTE: save arround  1 ~ two frames each second to proccess if fps = 30
 	timer= extraArgs['timer_sec']
 	pos = []
 	global sec_passed
  
-	frame_mirrored = cv2.flip(_frame , 1) #to make it easier for user but the original frame is the one we process
-	if extraArgs['count'] % frames_to_skip_procs == 0 :
+	if extraArgs['count'] % shown_timer_control_var == 0 : #control shown timer
 		sec_passed +=1
+  
+	if extraArgs['count'] % shown_frames_control_var == 0 :  #control fps and shown frames to user
 		timer -= sec_passed
+
+		if  skew_angle <= 5   and  skew_angle  >= -5 :
+			clr = "green"
+		else :
+			clr =  "red"
+  
+		frame_mirrored = cv2.flip(_frame , 1) #to make it easier for user but the original frame is the one we process
 		if _is_valid == True :
 			frame , pos  = make_rectangle_obj( frame_mirrored , _id_dimension , clr , _frame_shape = extraArgs['frame_shape']  )
-			frame  = make_timer_obj(frame_mirrored , pos , timer)
-			cv2.imshow("Camera", frame_mirrored)
+			frame  = make_timer_obj(frame , pos , timer)
+			cv2.imshow("Camera", frame)
 		elif _is_valid2 == True :
 			frame2 , pos2 = make_rectangle_obj( frame_mirrored , _id_dimension , clr, _frame_shape = extraArgs['frame_shape']  )
-			frame2 = make_timer_obj( frame , pos , timer)
+			frame2 = make_timer_obj( frame2 , pos , timer)
 			cv2.imshow("Camera", frame2)
 		else : #show any red
 			frame  , pos  = make_rectangle_obj( frame_mirrored , _id_dimension , clr , _frame_shape = extraArgs['frame_shape']  )
 			frame  = make_timer_obj( frame , pos , timer)
 			cv2.imshow("Camera", frame)
-		skip = False
-	elif extraArgs['count'] < 2:
+   
+	elif extraArgs['count'] <= 2:
 		pos = get_pos(extraArgs['frame_shape'] , _id_dimension)
 		processing = cv2.imread("./ai_data/progress.png") 
 		processing = cv2.resize(processing , (extraArgs['frame_shape'][1] , extraArgs['frame_shape'][0]))
 		cv2.imshow("Camera", processing)
-
+  
+  
+  
+	if extraArgs['count'] % frames_to_skip_procs  == 0 : #control procced frames
+		pos = get_pos(extraArgs['frame_shape'] , _id_dimension )
 		skip = False
-
-	else: 
+  
+	else :
 		skip = True
 		if testing_mode == True : #TESTING
+			global skipped_cnt
+			skipped_cnt += 1
 			print( f"skip frame? {skip}")
 			print( f"color of box {clr}")
-		return skip , skip , skip , skip
+		return skip , skip , skip , 1
 
 	if testing_mode == True : #TESTING
 		print( f"skip frame? {skip}")
 		print( f"angle? {skew_angle}")
-
+  
+  
 	x1 , y1 = pos[0][0] , pos[0][1]
 	x2 , y2 = pos[1][0] , pos[1][1]
 	#crop image to get the id card only (with + 5px than actuall id size)
 	_frame = cv2.UMat( _frame , [y1 , y2] , [x1 , x2]) 
- 
+
 	#change image to gray scale cuz THRESH OTSU Needs that
 	_frame = cv2.cvtColor(_frame , cv2.COLOR_BGR2GRAY)
 
@@ -539,13 +579,13 @@ def process_vid_frame( _frame : cv2.UMat | np.ndarray , _id_dimension : tuple , 
 
 	no_deskew = cv2.UMat(np.array(_frame.get()))  #deep copy _frame ( efficient but takes more mem.)
 	#COW copy method of _frame (saves mem but puts overhead + some issues)
- 
+
 
 	f_shape = ((y2 - y1) , (x2 - x1))
 	_frame , skew_angle = deskew_img( _frame , _ref_img , img_shape= f_shape )
 
 	if type(_frame) == type(-1) : #skip this frame
-		return skip , skip , skip , skip
+		return skip , skip , skip , 1
 
 	# #continue process
 	_frame = cv2.Laplacian(_frame, cv2.CV_8U, ksize=3)
@@ -562,7 +602,7 @@ def process_vid_frame( _frame : cv2.UMat | np.ndarray , _id_dimension : tuple , 
 
 	img_final_deskew = _frame
 	img_final_no_deskew = no_deskew
- 
+
 
 
 	if testing_mode == True : #TESTING
@@ -739,7 +779,7 @@ def read_simple_card_opencl( vid : cv2.VideoCapture , vid_specs : list , id_card
  
 
 	no_error , frame =  vid.read() #pre-allocate frame to save some overhead
-	frame = cv2.flip(frame , 1)
+	# frame = cv2.flip(frame , 1)
  
 	if  not no_error :
 		print(f"""
@@ -767,7 +807,7 @@ def read_simple_card_opencl( vid : cv2.VideoCapture , vid_specs : list , id_card
 
 		img_final_deskew , img_final_no_deskew , skip , skew_angle = process_vid_frame(frame , _id_dimension= id_dimension , _is_valid = is_valid ,  _is_valid2 = is_valid2 , _ref_img = ref_img , frame_shape = frame_shape , count= vid_time_cnt , skew_angle = skew_angle , timer_sec= vid_length_sec , fps= fps)
 
-		if type(img_final_deskew) == type( False ) or type(img_final_no_deskew) == type( False ) : #skip this frame for speed or err handle
+		if type(img_final_deskew) ==  bool  or type(img_final_no_deskew) == bool or skip == True : #skip this frame for speed or err handle
 
 			print
 			(
@@ -776,10 +816,23 @@ def read_simple_card_opencl( vid : cv2.VideoCapture , vid_specs : list , id_card
 			due to cv2 unable to generate  homopraghy transformation mat
 			"""
 			)
+   
+			if testing_mode == True :#TESTING
+				end_time = time.time()
+				actual_frametime = end_time - start_time
+				actual_fps = 1 / actual_frametime
+				max_rec_frametime_min_fps[0] =  max (max_rec_frametime_min_fps[0] , actual_frametime)
+				max_rec_frametime_min_fps[1] =  min (max_rec_frametime_min_fps[1] , actual_fps)
+				min_rec_frametime_max_fps[0] =  min (max_rec_frametime_min_fps[0] , actual_frametime)
+				min_rec_frametime_max_fps[1] =  max (max_rec_frametime_min_fps[1] , actual_fps)
+				print(f"#### actual Frametime(sec) and FPS: {actual_frametime} , {actual_fps} ####")
+				print(f"#### TARGET frametime and fps (sec) {frametime / 1000} , {fps} ####")
 
 			vid_time_cnt -= 1
+			cv2.waitKey( 1 )  
 			continue
-		
+	
+ 	
 		if testing_mode == True :
 			print (f"this frame no : {vid_time_cnt}")
 		
@@ -829,10 +882,10 @@ def ocr_ready_id( frames_buff: list , frames_deskewed_buff : list , id_card_spec
 	buff1_sz = len(frames_buff)
 	buff2_sz = len(frames_buff)
 	i = max ( buff1_sz , buff2_sz )
-	no_frame_to_ocr = i
+	no_frame_to_ocr = i 
  
 	if testing_mode == True :
-		print (f"numer of frames to ocr : {i}")
+		print (f"number of frames to ocr : {i}")
  
 	while i > 0: 
 		#OCR USING PYTESSERACT
@@ -1057,7 +1110,7 @@ def ocr_main (id_dimension : tuple = (750 , 417) , id_type_indx : int = 0 , test
 
 
 	final_value = None 
-	vid, *vid_specs = video_settings_setup( vid_length_sec= 50  )
+	vid, *vid_specs = video_settings_setup( vid_length_sec= 15  )
 	active_gpu_api = vid_specs[3]
 
 	if active_gpu_api == 1 : #Cuda
@@ -1083,6 +1136,7 @@ def ocr_main (id_dimension : tuple = (750 , 417) , id_type_indx : int = 0 , test
 		print(f" highest recorded frametime  (sec) , lowest  fps  : {max_rec_frametime_min_fps}")
 		print(f" lowest  recorded frametime  (sec) , highest fps  : {min_rec_frametime_max_fps}")
 		print ("did we found correct id ? " , final_status)#TESTING
+		print ("skipped frames count " , {skipped_cnt})#TESTING
  
 	if final_status : 
 		 
@@ -1100,7 +1154,7 @@ if __name__ == "__main__":
  
  
 	#test ocr 
-	print(f" YOUR OCR FINAL OUTPUT (ID , op_status) : {ocr_main(testing_on= True)}")
+	print(f" YOUR OCR FINAL OUTPUT (ID , op_status) : {ocr_main(testing_on= False)}")
 	# print(f"previous was you ocr_main() report: {cProfile.run('ocr_main(id_dimension= (320 , 240 ))' , filename=r'./extra/light_ocr_perfo_rep')}")
 	
 	#save imgs to db for first time after rebuilding db
