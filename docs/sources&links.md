@@ -43,7 +43,10 @@
 
 	* https://www.geeksforgeeks.org/opencv-python-tutorial/
 
-	 *  Prof.heba slides & cv2 documentation
+	 *  Prof.heba  KSU engineering college cv course slides 
+	 * [cv2 documentation](https://docs.opencv.org/4.x/d6/d00/tutorial_py_root.html)
+	 * also for CV part specially de-skew and de-rotate part in project check this [Image Stitching](https://www.youtube.com/playlist?list=PL2zRqk16wsdp8KbDfHKvPYNGF2L-zQASc) playlist 
+	 	- also check out the rest CV content of channel it's a hidden gem
 
 * **pytesseract OR easyocr** 
 
@@ -80,5 +83,9 @@ _(pytesseract is better with docs and text. easyocr slower but better with image
 * https://www.geeksforgeeks.org/python-gui-tkinter/
 
 * https://docs.opencv.org/4.x/d6/d00/tutorial_py_root.html
+* [Gmail feature](https://www.youtube.com/watch?v=FFjQGgsb-cg) didnt find full up to-date source for that but you can check my code or google docs regarding this 
 
 * msp python basics notes ( will add later)
+
+
+<center><sub> <span style= "color: red;"> This is not all the sources, but it is a good plethora of what we needed and used. 
