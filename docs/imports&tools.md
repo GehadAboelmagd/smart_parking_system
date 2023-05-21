@@ -28,10 +28,17 @@
 * `pip install pytesseract`
 * `pip install emoji`
 
+
 > ### Download for google Gmail API
 
 * `pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client`
 
+---
+
+* **Install all via one  command :**
+	```cmd 
+		pip install opencv-python psutil CprofileV textract pyautogui numpy pytesseract emoji google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client
+	```
 -----
 
 > ### Also install tesseract on CMD : 
