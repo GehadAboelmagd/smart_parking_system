@@ -105,7 +105,7 @@ def make_rectangle_obj( frame : cv2.UMat | np.ndarray , id_dimension : tuple  , 
 	rec_spec['top_left_coordinate'] , rec_spec['bot_right_coordinate'] = (x1 , y1) , (x2 , y2)
 
 #focus on rectangle and blur all else
-	blur_kernel = (10 , 10)
+	blur_kernel = (25 , 25)
 
 	#blur whole image save in copy  then take a  rectangle mask from original  then compine vualla! youve blurred outside but inside crsytall clear 
 	blured_1 = cv2.blur( frame_to_show , blur_kernel )
