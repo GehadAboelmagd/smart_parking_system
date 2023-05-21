@@ -29,7 +29,7 @@ import multiprocessing as mp
 
 
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
-def make_timer_obj ( frame , id_pos  , timer , **extraArgs ) :
+def make_timer_obj ( frame : cv2.UMat | np.ndarray , id_pos : tuple , timer : int , **extraArgs ) -> cv2.UMat | np.ndarray :
 	''' returns:
 
 		frame with reactangle and timer obj
@@ -60,7 +60,7 @@ def make_timer_obj ( frame , id_pos  , timer , **extraArgs ) :
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
 
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
-def make_rectangle_obj( frame , id_dimension   , color , **extraArgs ) : 
+def make_rectangle_obj( frame : cv2.UMat | np.ndarray , id_dimension : tuple  , color : str , **extraArgs ) -> tuple: 
 	"""
 		1. specs of rectangle to be rendered in live video for guiding end user
 
@@ -129,7 +129,7 @@ def make_rectangle_obj( frame , id_dimension   , color , **extraArgs ) :
 	return frame_rect_obj , pos
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
 	
-def get_pos ( frame_shape  , id_dimension)  :
+def get_pos ( frame_shape : tuple , id_dimension : tuple ) -> list :
 	''' return : [(x1 , y1 ) , (x2 , y2)] '''
 	y_center , x_center = [ int(x) // 2 for x in frame_shape ] #frame_to_show  has no shape attribute (UMat obj)
 	#top left 
@@ -141,7 +141,7 @@ def get_pos ( frame_shape  , id_dimension)  :
 	return pos
 
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
-def check_gpu_accl (_default_gpu = 1)  : #default gpu set to nvidia cuda == 1
+def check_gpu_accl (_default_gpu : int = 1) -> tuple : #default gpu set to nvidia cuda == 1
 	"""
 	* use only  inside video_settings()
 
@@ -170,18 +170,18 @@ def check_gpu_accl (_default_gpu = 1)  : #default gpu set to nvidia cuda == 1
 	"""
 
 	#check if cuda / opencl is enabled  
-	cuda_available  = cv2.cuda.getCudaEnabledDeviceCount() > 0
-	cuda_enabled    = 'CUDA'	in cv2.getBuildInformation()
+	cuda_available : bool = cv2.cuda.getCudaEnabledDeviceCount() > 0
+	cuda_enabled   : bool = 'CUDA'	in cv2.getBuildInformation()
 	
-	opencl_enabled  = cv2.ocl.haveOpenCL()
+	opencl_enabled : bool = cv2.ocl.haveOpenCL()
 	cv2.ocl.setUseOpenCL(True) if opencl_enabled else False
 
 	#alternative check for opencl (but i'll do it also XD)
-	opencl_enabled  = 'OpenCL' in cv2.getBuildInformation()
+	opencl_enabled : bool = 'OpenCL' in cv2.getBuildInformation()
 	if opencl_enabled : cv2.ocl.setUseOpenCL(True)
 	
 	#even if no gpu accel available  default function is Nvidia cuda function => 2
-	gpu_accel_enabled = [False  , 2]
+	gpu_accel_enabled : list[bool , int]= [False  , 2]
  
 
 	if cuda_enabled and cuda_available : 
@@ -199,7 +199,7 @@ def check_gpu_accl (_default_gpu = 1)  : #default gpu set to nvidia cuda == 1
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
 
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
-def enable_multithreading (thread_no  = 4) :  #in case gpu acceleration is not enough to maintain stable 30fps
+def enable_multithreading (thread_no : int = 4) :  #in case gpu acceleration is not enough to maintain stable 30fps
 	cv2.setNumThreads(thread_no)#enable cv2 multithread
 	ret = f"number of cv2 used threads: {cv2.getThreadNum()} "
 	return ret
@@ -207,7 +207,7 @@ def enable_multithreading (thread_no  = 4) :  #in case gpu acceleration is not e
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
 
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
-def video_settings_setup (cam_indx  = 0, fps = 30 , vid_length_sec  = 10, res = (640 , 480), flscreen = True) :
+def video_settings_setup (cam_indx : int  = 0, fps : int = 30 , vid_length_sec : int = 10, res : tuple = (640 , 480), flscreen : bool = True) -> tuple :
 	"""
 	* This function does set up the video objects
 	* res is set by default to 640 x 480
@@ -290,7 +290,7 @@ def video_settings_setup (cam_indx  = 0, fps = 30 , vid_length_sec  = 10, res = 
  
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
 
-def compare_img ( img_to_comp , ref_img ) :
+def compare_img ( img_to_comp : np.ndarray  , ref_img : np.ndarray) -> list :
 	''' Returns : good_matches , (ref_kp , img_kp) '''
 
 #NOTE: DETECT keypoints and create the decriptors for ref.img and img_to_cmp
@@ -326,7 +326,7 @@ def compare_img ( img_to_comp , ref_img ) :
 	return ( good_matches , (ref_kp , img_kp) )
  
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
-def get_trans_mat( good_matches , key_points) :
+def get_trans_mat( good_matches : cv2.DMatch  , key_points : tuple ) -> np.ndarray :
 	''' Returns : homography transformation matrix '''
  
 	#NOTE:  homography transformation matrix : 
@@ -349,7 +349,7 @@ def get_trans_mat( good_matches , key_points) :
 	return trans_mat 
 
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
-def get_skew_angle( homograph_rot_mat , img_to_skew_shape  ) :
+def get_skew_angle( homograph_rot_mat : np.ndarray , img_to_skew_shape : tuple ) -> tuple:
 	"""
 #### Pure rotation mat  angle between x-axis and y-axis only  should look like :
 *  other  that affine transformation  mat could have : scaling , skew , translation and rotation -> could be either one or multiple in one mat depending on image
@@ -413,7 +413,7 @@ actually its get_rotation_angle and there is diff between skew and rot angle but
 	
 	return ( skew_angle , (center , w , h) )
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
-def affine_trans ( _skew_angle , img_coord, _image_to_skew )  :
+def affine_trans ( _skew_angle : int , img_coord : tuple , _image_to_skew : np.ndarray) -> np.ndarray :
 	"""
 	Returns:
 		 deskewed_image : np.ndarray
@@ -426,13 +426,13 @@ def affine_trans ( _skew_angle , img_coord, _image_to_skew )  :
  
 	return deskewed_img
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
-def rotate_180 (img_to_rotate_180 ) :
+def rotate_180 (img_to_rotate_180 : np.ndarray) -> np.ndarray :
 	rot_angle = 180
 	rotated_180_img = affine_trans (rot_angle , img_to_rotate_180)
 
 	return  rotated_180_img
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
-def deskew_img(  img_to_skew  , ref_img  , **extraArgs ) : #lets call it de-rotate for now
+def deskew_img(  img_to_skew : np.ndarray , ref_img : np.ndarray , **extraArgs ) -> np.ndarray : #lets call it de-rotate for now
 	"""
 ---
 	Returns:
@@ -464,7 +464,7 @@ def deskew_img(  img_to_skew  , ref_img  , **extraArgs ) : #lets call it de-rota
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
 skipped_cnt = 0 #TESTING
 sec_passed = 1
-def process_vid_frame( _frame , _id_dimension , _is_valid ,  _is_valid2 , _ref_img  , **extraArgs)  :
+def process_vid_frame( _frame : cv2.UMat | np.ndarray , _id_dimension : tuple , _is_valid ,  _is_valid2 , _ref_img : cv2.UMat | np.ndarray , **extraArgs) -> cv2.UMat | np.ndarray :
 	"""
 #### Main process in the function :
  
@@ -620,7 +620,7 @@ def process_vid_frame( _frame , _id_dimension , _is_valid ,  _is_valid2 , _ref_i
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
  
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
-def search_id( id_char_type , scanned_image , valid_ids_freq )  :
+def search_id( id_char_type : str , scanned_image : str , valid_ids_freq : dict ) -> bool :
 	"""
  ---
 	Returns:
@@ -646,7 +646,7 @@ def search_id( id_char_type , scanned_image , valid_ids_freq )  :
 		id_obj = id_obj.strip().replace("." , "")
 
 		sz = len(id_obj)
-		ok_type= id_obj.isnumeric()
+		ok_type : bool = id_obj.isnumeric()
 
 		if testing_mode == True :
 			print (f'scanned_image ibj no. : {len(scanned_image)} ')#TESTING
@@ -655,7 +655,7 @@ def search_id( id_char_type , scanned_image , valid_ids_freq )  :
 		if id_char_type == 'numeric' and ok_type ==  True and sz == 14 : 
 			extracted_id_val = id_obj
 
-			db_ok=  db.db_check_ai_id(id_obj)
+			db_ok : bool =  db.db_check_ai_id(id_obj)
 
 			if testing_mode == True :
 				print(f"db id_obj check RESULT case 1: {db_ok}") #TESTING
@@ -682,7 +682,7 @@ def search_id( id_char_type , scanned_image , valid_ids_freq )  :
 			if len(joined_numeric_conseq_obj) == 14 :
 				extracted_id_val = joined_numeric_conseq_obj
 
-				db_ok  =  db.db_check_ai_id(id_obj)
+				db_ok : bool =  db.db_check_ai_id(id_obj)
 
 				if testing_mode == True :
 					print(f"db id_obj check RESULT case 2: {db_ok}") #TESTING
@@ -703,7 +703,7 @@ def search_id( id_char_type , scanned_image , valid_ids_freq )  :
 			id_obj = id_obj.replace('l' , '1')
 			extracted_id_val = id_obj
    
-			db_ok  =  db.db_check_ai_id(id_obj)
+			db_ok : bool =  db.db_check_ai_id(id_obj)
 
 			if testing_mode == True :
 				print(f"db id_obj check RESULT case 3: {db_ok}") #TESTING
@@ -723,7 +723,7 @@ def search_id( id_char_type , scanned_image , valid_ids_freq )  :
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
  
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
-def read_simple_card_cuda (vid  , vid_specs , id_card_specs  , is_valid = False) :
+def read_simple_card_cuda (vid : cv2.VideoCapture , vid_specs : list , id_card_specs : dict , is_valid : bool = False) -> str :
 	#gpu index to use in acceleration
 	cv2.cuda.setDevice(0) 
 
@@ -738,7 +738,7 @@ def read_simple_card_cuda (vid  , vid_specs , id_card_specs  , is_valid = False)
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
 
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
-def read_simple_card_opencl( vid , vid_specs  , id_card_specs  , is_valid = False  , is_valid2 = False) : #NOTE: also use it when no GPU
+def read_simple_card_opencl( vid : cv2.VideoCapture , vid_specs : list , id_card_specs : dict , is_valid = False  , is_valid2 = False) -> str : #NOTE: also use it when no GPU
 	"""
 	* Args:
 
@@ -779,8 +779,8 @@ def read_simple_card_opencl( vid , vid_specs  , id_card_specs  , is_valid = Fals
  
 
 	no_error , frame =  vid.read() #pre-allocate frame to save some overhead
-	cv2.namedWindow('Camera', cv2.WINDOW_NORMAL)
 	cv2.setWindowProperty('Camera', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+
  
 	if  not no_error :
 		print(f"""
@@ -862,7 +862,7 @@ def read_simple_card_opencl( vid , vid_specs  , id_card_specs  , is_valid = Fals
 
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
  
-def ocr_ready_id( frames_buff, frames_deskewed_buff , id_card_specs , fps ) : 
+def ocr_ready_id( frames_buff: list , frames_deskewed_buff : list , id_card_specs : dict , fps : int  ) -> tuple : 
 	'''
 	---
 	* Returns:
@@ -1013,7 +1013,7 @@ def ocr_ready_id( frames_buff, frames_deskewed_buff , id_card_specs , fps ) :
  
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
 
-def save_ref_img_db ( name = "ref_id_img_hassan"): #only use manually 
+def save_ref_img_db ( name : str = "ref_id_img_hassan"): #only use manually 
 
 	#Apply same operations that made to image before calling deskew()
 	img_path = r"./ai_data/abdullah_hassan_22xd.png"
@@ -1033,7 +1033,7 @@ def save_ref_img_db ( name = "ref_id_img_hassan"): #only use manually
 		#send to db
 		db.access_img_table( 1 , img_to_write= ref_img_encoded , img_name= name  , ref_id_val= '54302518496307') 
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
-def get_ref_img_db(img_name  = "ref_id_img_hassan"):
+def get_ref_img_db(img_name : str = "ref_id_img_hassan") -> np.ndarray :
 
 	ref_img_encoded =  db.access_img_table( 0 ,img_name= img_name )
 	ref_img = cv2.imdecode( np.frombuffer(ref_img_encoded , dtype= np.uint8 , ) , cv2.IMREAD_GRAYSCALE)
