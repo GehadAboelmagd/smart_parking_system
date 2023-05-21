@@ -440,7 +440,7 @@ def park_car_db(conn, cmd, id, temp_pass: str):
         conn.close()
         # return NOThing important END
         print("debug message : SUCCESS Database has been CHANGED! \n")
-        return nearest_empty_cell_id  # success
+        return nearest_empty_cell_id , -1 , -1 , -1 # success
 ###########################################################################
 
 
