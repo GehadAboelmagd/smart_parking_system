@@ -21,13 +21,14 @@ def com_page(error=0):
         tk.Label(page, text='Wrong com', font=('Arial', 10),fg='red').place(x=5, y=5)
 
     l_e = tk.Label(page,text='Enter  Com Port',font=('Arial', 14, 'bold'))
-    l_e.place(x=160,y=20)
+    l_e.place(x=130,y=20)
 
     entry = tk.Entry(page,)
     entry.place(x=110,y=60,height=25,width=200)
 
 
     global com
+    com = None
     def get_val():
         global com
         com = entry.get()
@@ -42,8 +43,7 @@ def com_page(error=0):
 
     page.mainloop()
 
-
-while(com==None):com_page()
+com_page()
 
 while(1):
     try:
@@ -51,6 +51,7 @@ while(1):
         break
     except:
         com_page(1)
+        if(com==None): break
 
 def prepare_for_parknig(park_n):
     # open serial communication port
