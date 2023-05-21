@@ -20,8 +20,8 @@
   * [Omar](https://github.com/orsnaro)  
   * [Asmaa](https://github.com/Asmaaramadan1)
   * [Mahmoud](https://github.com/mahmoudSh58) 
-  * [Mohamed](https://github.com/MohamedMohamedSaleh)
   * [Hager](https://github.com/hagartamer)
+  * [Mohamed](https://github.com/MohamedMohamedSaleh)
   * Nour
 
  </details> 
@@ -29,12 +29,13 @@
 ---
 
 > ### 📣 Beta (v2.0) is out!
+ ![park system icon](icon_1.ico "icon") 
+
  * Gmail is now connected to our Database
  * EXE version is out now! just download setup file connect to arduino then youre ready to go!
  * (SOON) audio visuals & OCR ID motion tracker!
  * ~~some bugs fixed~~
  
-![park system icon](icon_1.ico "icon") 
 
 </br>
 </br>
