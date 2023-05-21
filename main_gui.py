@@ -28,7 +28,7 @@ def message(window,text,type):
     if(type == 0):
         color = '#ffb0b0'
 
-    l_m = tk.Label(window, text=text, font=('Arial',12, 'bold'), bg=color, fg='#2a0000', borderwidth=20)
+    l_m = tk.Label(window, text=text, font=('Arial',10, 'bold'), bg=color, fg='#2a0000', borderwidth=10)
     l_m.place(x=50, y=50)
 
     window.update()
