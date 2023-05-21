@@ -43,7 +43,10 @@
 
 	* https://www.geeksforgeeks.org/opencv-python-tutorial/
 
-	 *  Prof.heba slides & cv2 documentation
+	 *  Prof.heba  KSU engineering college cv course slides 
+	 * [cv2 documentation](https://docs.opencv.org/4.x/d6/d00/tutorial_py_root.html)
+	 * also for CV part specially de-skew and de-rotate part in project check this [Image Stitching](https://www.youtube.com/playlist?list=PL2zRqk16wsdp8KbDfHKvPYNGF2L-zQASc) playlist 
+	 	- also check out the rest CV content of channel it's a hidden gem
 
 * **pytesseract OR easyocr** 
 
