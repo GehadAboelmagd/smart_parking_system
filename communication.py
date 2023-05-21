@@ -9,6 +9,7 @@
 import serial
 import time
 import tkinter as tk
+import serial.tools.list_ports
 
 com = None
 def com_page(error=0):
@@ -43,7 +44,12 @@ def com_page(error=0):
 
     page.mainloop()
 
-com_page()
+
+ports = list(serial.tools.list_ports.comports())
+
+for port in ports:
+    if "Arduino" in port.description:
+        com = port.device
 
 while(1):
     try:
@@ -52,6 +58,8 @@ while(1):
     except:
         com_page(1)
         if(com==None): break
+
+if(com==None): exit()
 
 def prepare_for_parknig(park_n):
     # open serial communication port

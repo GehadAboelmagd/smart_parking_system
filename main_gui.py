@@ -45,6 +45,7 @@ def park_wait_page():
     p_page_2.geometry(f"{screen_w}x{screen_h}+0+0")
     p_page_2.title("parking Page.2")
     p_page_2.iconbitmap('icon_1.ico')
+    p_page_2.attributes('-fullscreen', True)
 
     global error_type
     global text_error
@@ -139,6 +140,7 @@ def park_page_1():
     p_page_1.geometry(f"{screen_w}x{screen_h}+0+0")
     p_page_1.title("parking Page.1")
     p_page_1.iconbitmap('icon_1.ico')
+    p_page_1.attributes('-fullscreen', True)
 
     global error_type
     global text_error
@@ -173,7 +175,7 @@ def park_page_1():
         p_page_1.destroy()
         '''add user_info to DB'''
 
-        user_info['park_cell']=int(db.db_cmd(0,user_info['id'],password)[0])
+        user_info['park_cell']= db.db_cmd(0,user_info['id'],password)[0]
 
         global  error_type
         global  text_error
@@ -244,6 +246,7 @@ def get_wait_page():
     g_page_2.geometry(f"{screen_w}x{screen_h}+0+0")
     g_page_2.title("GET Page.2")
     g_page_2.iconbitmap('icon_1.ico')
+    g_page_2.attributes('-fullscreen', True)
 
     global error_type
     global text_error
@@ -290,6 +293,7 @@ def pay_page():
     pay_p.geometry(f"{screen_w}x{screen_h}")
 
     pay_p.iconbitmap('icon_1.ico')
+    pay_p.attributes('-fullscreen', True)
 
     global error_type
     global text_error
@@ -325,6 +329,7 @@ def password_page():
     password_p.configure(bg='#000F35')
     password_p.geometry(f"{screen_w}x{screen_h}")
     password_p.iconbitmap('icon_1.ico')
+    password_p.attributes('-fullscreen', True)
 
     global error_type
     global text_error
@@ -413,6 +418,7 @@ def get_car_page():
   get_car.configure(bg='#000F35')
   get_car.geometry(f"{screen_w}x{screen_h}")
   get_car.iconbitmap('icon_1.ico')
+  get_car.attributes('-fullscreen', True)
 
   global error_type
   global text_error
@@ -515,6 +521,7 @@ def root_page():
     root.configure(bg='#000F35')
     root.geometry(f"{screen_w}x{screen_h}+0+0")
 
+    root.attributes('-fullscreen', True)
     root.title("Home Page")
     root.iconbitmap('icon_1.ico')
 
