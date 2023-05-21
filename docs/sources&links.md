@@ -86,3 +86,6 @@ _(pytesseract is better with docs and text. easyocr slower but better with image
 * [Gmail feature](https://www.youtube.com/watch?v=FFjQGgsb-cg) didnt find full up to-date source for that but you can check my code or google docs regarding this 
 
 * msp python basics notes ( will add later)
+
+
+<center><sub> <span style= "color: red;"> This is not all the sources, but it is a good plethora of what we needed and used. 
