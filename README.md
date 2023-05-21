@@ -54,9 +54,9 @@
   
   * [Sources & Docs](docs/sources&links.md)
 
-  * [Modules & tools](imports&tools.md)
+  * [Modules & tools](docs/imports&tools.md)
 
-  * [Hardware Components](Hardware_components.md) 
+  * [Hardware Components](docs/Hardware_components.md) 
 
 
 
