@@ -167,6 +167,7 @@ def main_gmail(  _to_email : str , _from_email = "system.python.web@gmail.com" ,
 		print ("*SUCESSS: Gmail-API Granted Access to The System Succesfully!* \n\n")
 	else :
 		print("*FAIL: System might not Be  validated to  be able to Access  gmail!* \n please Auth. your system program  OR check your auth. certificate file... \n\n")
+		return enm.GMAIL_BAD
 
 	try:
 		# port = 465(legacy deprecated)  # For SSL -> other SMTP serverports can be found in web (587 .. etc)
@@ -226,7 +227,7 @@ def main_gmail(  _to_email : str , _from_email = "system.python.web@gmail.com" ,
 		# server.sendmail(from_sys_gmail , to_gmail_add , message) #send row string email
 
 	except Exception as gmail_con_err :
-		os.system(r"cls") #unix : clear
+		# os.system(r"cls") #unix : clear
 		print("***ERROR CONNECTING TO YOUR GMAIL. terminating... ***")
 		print(" Details: "  , gmail_con_err,"\n\n")
 		return enm.GMAIL_BAD
