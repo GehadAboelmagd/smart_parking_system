@@ -84,14 +84,16 @@ SCOPES = ['https://www.googleapis.com/auth/gmail.send',
 def refresh_credentials(creds):
     creds.refresh(Request())
 ###################################################################################################
+client_secret_path = r"./database_data/client_secret.json"
+token_path = r"./database_data/token.json"
 def gmail_setup():
 	creds = None
 	# The file token.json stores the user's access and refresh tokens, and is
 	# created automatically when the authorization flow completes for the first time
 
-	if os.path.exists('./database_data/token.json'):
+	if os.path.exists(token_path):
 		creds = UserCredentials.from_authorized_user_file(
-		    './database_data/token.json', SCOPES)
+		    token_path, SCOPES)
 
 	try:
 		# If there are no (valid) credentials available, let the user log in.
@@ -108,11 +110,11 @@ def gmail_setup():
 					return enm.GMAIL_BAD
  
 			else:
-				flow = InstalledAppFlow.from_client_secrets_file('./database_data/client_secret.json', SCOPES)
+				flow = InstalledAppFlow.from_client_secrets_file(client_secret_path, SCOPES)
 					
 				creds = flow.run_local_server(port=0)
 			# Save the credentials for the next runs
-			with open('./database_data/token.json', 'w') as token:
+			with open(token_path, 'w') as token:
 				token.write(creds.to_json())
     
 	except Exception as e:
@@ -123,7 +125,7 @@ def gmail_setup():
 	# Call the Gmail API
 		#uncomment next 2 lines to grant access using API_KEY 
 		# API_KEY : str = ... #from your google cloud project
-		# service = build ( 'gmail' , 'v1' , developerKey= API_KEY)
+	# service = build ( 'gmail' , 'v1' , developerKey= API_KEY)
 
 		#comment next one line if u used API_KEY
 		service = build('gmail', 'v1', credentials=creds)
@@ -157,6 +159,7 @@ def get_sys_pass( is_auto : bool = True ) :
 
 
 ###################################################################################################
+sys_key_path = r"./database_data/sys_pass.txt"
 def main_gmail(  _to_email : str , _from_email = "system.python.web@gmail.com" , _msg_title = 'Operation Status :check_mark_button:' ,  _msg_content = "empty msg"  , attach_file = False  , file_path : str = None) -> enm: 
 	print ( "Starting  new Connection session with Gmail API... \n\n")
  
@@ -166,7 +169,7 @@ def main_gmail(  _to_email : str , _from_email = "system.python.web@gmail.com" ,
 	if  state == enm.GMAIL_OK : 
 		print ("*SUCESSS: Gmail-API Granted Access to The System Succesfully!* \n\n")
 	else :
-		print("*FAIL: System might not Be  validated to  be able to Access  gmail!* \n please Auth. your system program  OR check your auth. certificate file... \n\n")
+		print("\n*FAIL: System might not Be  validated to  be able to Access  gmail!* \n please Auth. your system program  OR check your auth. certificate file... \n\n")
 		return enm.GMAIL_BAD
 
 	try:
@@ -175,7 +178,7 @@ def main_gmail(  _to_email : str , _from_email = "system.python.web@gmail.com" ,
 		from_sys_gmail = _from_email
 		to_gmail = _to_email
 		sys_key = None
-		with open('./database_data/sys_pass.txt' , 'r') as file:
+		with open(sys_key_path , 'r') as file:
 			sys_key = file.read().strip()
 
 		
@@ -249,8 +252,13 @@ def main_gmail(  _to_email : str , _from_email = "system.python.web@gmail.com" ,
 
 
 if __name__ == '__main__':
+	
+	# only change them if run from this file
+	sys_key_path = r'./sys_pass.txt'
+	client_secret_path = r'./client_secret.json'
+	token_path = r'./token.json'
 
 	#TESTING
 	tst_email = "omar1xd@gmail.com"
 	tst_msg ="hi this is test message from api_gmail.py omar code  :automobile: :construction: (dont reply)"
-	# main_gmail( _to_email = tst_email  ,  _msg_content = tst_msg )
+	main_gmail( _to_email = tst_email  ,  _msg_content = tst_msg )
