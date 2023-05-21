@@ -1,0 +1,20 @@
+class enm:
+    MAIN_MEN_OK: int
+    MAIN_MEN_QUIT: int
+    MAIN_MEN_ER: int
+    MAIN_MEN_RES: int
+    CON_ER: int
+    CON_BAD_DATA: int
+    CON_OK: int
+    CON_NEW: int
+    CON_LOG: int
+    GMAIL_OK: int
+    GMAIL_BAD: int
+    CRED_OK: int
+    CRED_FAIL: int
+    CRED_ID_FOUND: int
+    CRED_ID_NEW: int
+    CRED_DONE: int
+    ID_PROF: int
+    ID_STU: int
+    UNKNOWN: int
