@@ -6,6 +6,8 @@
                           Title : Smart Parking System
                           Interpreter : cPython  v3.11.0 [Compiler : MSC v.1933 AMD64]
 """
+
+import sys
 import serial
 import time
 import tkinter as tk
@@ -51,6 +53,8 @@ for port in ports:
     if "Arduino" in port.description:
         com = port.device
 
+if(com==None): com_page()
+
 while(1):
     try:
         ser = serial.Serial(com, 9600)
@@ -59,7 +63,7 @@ while(1):
         com_page(1)
         if(com==None): break
 
-if(com==None): exit()
+if(com==None): sys.exit()
 
 def prepare_for_parknig(park_n):
     # open serial communication port
