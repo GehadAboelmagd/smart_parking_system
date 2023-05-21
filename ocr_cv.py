@@ -463,7 +463,7 @@ def deskew_img(  img_to_skew  , ref_img  , **extraArgs ) : #lets call it de-rota
  
  #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
 skipped_cnt = 0 #TESTING
-sec_passed = 1
+sec_passed = 0
 def process_vid_frame( _frame , _id_dimension , _is_valid ,  _is_valid2 , _ref_img  , **extraArgs)  :
 	"""
 #### Main process in the function :
@@ -1015,8 +1015,8 @@ def ocr_ready_id( frames_buff, frames_deskewed_buff , id_card_specs , fps ) :
 
 def save_ref_img_db ( name = "ref_id_img_hassan"): #only use manually 
 
-	#Apply same operations that made to image before calling deskew()
 	img_path = r"./ai_data/abdullah_hassan_22xd.png"
+	#Apply same operations that made to image before calling deskew()
 	path_no_ext , img_format = os.path.splitext(img_path)
 	ref_img = cv2.imread(f"./{img_path}", cv2.IMREAD_GRAYSCALE)
 	ref_img = cv2.bitwise_not(ref_img)
@@ -1159,5 +1159,5 @@ if __name__ == "__main__":
 	# print(f"previous was you ocr_main() report: {cProfile.run('ocr_main(id_dimension= (320 , 240 ))' , filename=r'./extra/light_ocr_perfo_rep')}")
 	
 	#save imgs to db for first time after rebuilding db
-	# save_ref_img_db ()
-	# save_ref_img_db (name= "original")
+	save_ref_img_db()
+	# save_ref_img_db(name= "original")
