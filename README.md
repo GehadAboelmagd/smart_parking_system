@@ -1,4 +1,4 @@
-# Smart Parking System
+# Smart Parking System 🚗
 
 ##### Fully Smart Automated Parking system  (Software & Hardware  with GUI as well!)  made for prof.hamdy Digital Control Course . this project 
 <details>
