@@ -689,3 +689,5 @@ if __name__ == "__main__":
 #    print(" pass is ok? : ", cell_id_pass_cost_time[1])
 #    print("Total prking cost : ", cell_id_pass_cost_time[2])
 #    print("Total time on parking : ", cell_id_pass_cost_time[3])
+
+	
