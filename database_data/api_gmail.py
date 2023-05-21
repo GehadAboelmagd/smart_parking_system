@@ -89,9 +89,9 @@ def gmail_setup():
 	# The file token.json stores the user's access and refresh tokens, and is
 	# created automatically when the authorization flow completes for the first time
 
-	if os.path.exists('./token.json'):
+	if os.path.exists('./database_data/token.json'):
 		creds = UserCredentials.from_authorized_user_file(
-		    './token.json', SCOPES)
+		    './database_data/token.json', SCOPES)
 
 	try:
 		# If there are no (valid) credentials available, let the user log in.
@@ -108,11 +108,11 @@ def gmail_setup():
 					return enm.GMAIL_BAD
  
 			else:
-				flow = InstalledAppFlow.from_client_secrets_file('./client_secret.json', SCOPES)
+				flow = InstalledAppFlow.from_client_secrets_file('./database_data/client_secret.json', SCOPES)
 					
 				creds = flow.run_local_server(port=0)
 			# Save the credentials for the next runs
-			with open('token.json', 'w') as token:
+			with open('./database_data/token.json', 'w') as token:
 				token.write(creds.to_json())
     
 	except Exception as e:
@@ -141,7 +141,7 @@ def gmail_setup():
 def get_sys_pass( is_auto : bool = True ) :
 	if is_auto :
 		_sys_pass = None 
-		with open('sys_pass.txt', 'r') as pass_file_obj: # ideally sys_pass.txt is encrepted and we decrept it but its testing gmail so no worries
+		with open('./database_data/sys_pass.txt', 'r') as pass_file_obj: # ideally sys_pass.txt is encrepted and we decrept it but its testing gmail so no worries
 			_sys_pass = pass_file_obj.read().strip()
 
 		return _sys_pass
