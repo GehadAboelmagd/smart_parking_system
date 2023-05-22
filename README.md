@@ -33,7 +33,7 @@
 
  * Gmail is now connected to our Database
  * [EXE version](https://github.com/Gehad-AboElmagd/smart_parking_system/releases/tag/%23pre-release) <sub>(pre-release)</sub> is out now! just download setup file connect to arduino then youre ready to go!
- * (SOON) audio visuals & OCR ID motion tracker!
+ * (SOON) audio feedback & OCR ID motion tracker!
  * ~~some bugs fixed~~
  
 
