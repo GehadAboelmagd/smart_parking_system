@@ -16,7 +16,7 @@
  <details>
 <summary><em>  👥Project Members </em> </summary>
 	
-  * [Omar](https://github.com/orsnaro) <sub>(team leader) </sub>
+  * [Omar](https://github.com/orsnaro) 
   * [Gehad](https://github.com/Gehad-AboElmagd)
   * [Asmaa](https://github.com/Asmaaramadan1)
   * [Mahmoud](https://github.com/mahmoudSh58) 
