@@ -10,6 +10,7 @@
   4. _Sqlite DB_ 
   5. _Arduino/python code_  
   6. _GUI tkinter code_
+  7. _google gmail API_
 
  </details> 
  
