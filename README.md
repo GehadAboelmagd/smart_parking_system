@@ -4,7 +4,7 @@
 <details>
 <summary><em>  ✨Main project parts </em> </summary>
 	
-  1. _Hardware_  <sub> structure , motors , controller , pullies , belt , cables </sub>
+  1. _Hardware_  <sub> structure , motors , controller ,sensors, pullies , belt , cables </sub>
   2. _CV_  
   3. _OCR_ 
   4. _Sqlite DB_ 
