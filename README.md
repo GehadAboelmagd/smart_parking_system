@@ -34,7 +34,7 @@
 
  * Gmail is now connected to our Database
  * [EXE version](https://github.com/Gehad-AboElmagd/smart_parking_system/releases/tag/%23pre-release) <sub>(pre-release)</sub> is out now! just download setup file connect to arduino then youre ready to go!
- * (SOON) audio visuals & OCR ID motion tracker!
+
  * ~~some bugs fixed~~
  
 
@@ -49,17 +49,35 @@
 ![controller image](docs/controller.jpg) 
 ---
 
+ <br>
+ <br>
+ 
+---
 
+> ###  🔜 Upcoming Updates:
+*  (SOON) ALL `TODO` in project files 
+*  (SOON) Enhancing The GUI using tkinter v2 or pyqt
+*  (SOON) OCR using our own dataset and model!!
+*  (SOON) audio feedback 
+*  (SOON) OCR ID motion tracker (track id card crop the number and OCR is only not whole card)!
+
+
+---
 > ###  🛠 Issues & Notes:
 *  OCR ID detect box not altering color with change of ID angle
-*  first release comming very soon
+*  De-skew algorithm is not working as expected
+*  learn how to really control multithreading and gpu accel and use subprocess and asyncio libs
+*  either delete my usermade th and gpu accel functions if win and cv2 already handles activating them( search more wither cv2 and pytesseract auto activate them or windows ) 
+*  GUI need some spelling check
+*  need parking entrance sensors and gate
+* Enhance arduino and steppers code (nearest empty cell algorithm needs enhance and speed)
+
+---
 
 </br>
 </br>
 </br>
-</br>
-</br>
-</br>
+
 
 
 ---
