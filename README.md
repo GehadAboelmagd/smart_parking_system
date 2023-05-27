@@ -59,7 +59,7 @@
 *  (SOON) Enhancing The GUI using tkinter v2 or pyqt
 *  (SOON) OCR using our own dataset and model!!
 *  (SOON) audio feedback 
-*  (SOON) OCR ID motion tracker (track id card crop the number and OCR is only not whole card)!
+*  (SOON) OCR ID motion tracker (track id card crop the number and OCR it only not whole card)!
 
 
 ---
