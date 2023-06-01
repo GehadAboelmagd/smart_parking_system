@@ -29,6 +29,13 @@
  
 ---
 
+![poster](/docs/Poster.png)
+
+</br>
+</br>
+
+---
+
 > ### 📣 Beta (v2.0) is out!
  ![park system icon](icon_1.ico "icon") 
 
@@ -36,18 +43,7 @@
  * [EXE version](https://github.com/Gehad-AboElmagd/smart_parking_system/releases/tag/%23pre-release) <sub>(pre-release)</sub> is out now! just download setup file connect to arduino then youre ready to go!
 
  * ~~some bugs fixed~~
- 
-
-</br>
-</br>
-
-
----
-
-> ## 🔖Project Poster:
-
-![poster](/docs/Poster.png)
-
+ * 
 ---
 
  <br>
