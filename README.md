@@ -43,10 +43,11 @@
 
 
 ---
-> ## 🔩 Hardware :
-![full structure image]( docs/full_struct.jpg ) 
-<br>
-![controller image](docs/controller.jpg) 
+
+> ## 🔖Project Poster:
+
+![poster](/docs/Poster.png)
+
 ---
 
  <br>
