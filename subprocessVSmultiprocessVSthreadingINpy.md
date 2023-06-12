@@ -22,6 +22,9 @@ The threading module allows you to create multiple threads creates a pool of wor
 It is useful for I/O-bound tasks, where waiting for external resources (e.g., network or then printed to the console. disk I/O) is the primary bottleneck.
 Threads share the same memory space, which can lead to easier data sharing but also requires careful synchronization to avoid race conditions.
 Due to the GIL in CPython, threads do not provide true parallelism for CPU-bound tasks, as only one thread can execute Python bytecodes at a time.
+
+### Summary :
+
 In summary, use subprocess when you need to run external commands or executables, use multiprocessing for parallelizing CPU-bound tasks, and use threading for I/O-bound tasks or when you need lightweight concurrency within a single process.
 
 
