@@ -25,7 +25,12 @@ import os.path
 import sys
 import ssl
 import smtplib
-from .enm import enm
+
+if __name__ == '__main__' :
+	from enm import enm
+else :
+	from .enm import enm
+ 
 import base64
 import google.auth
 from google.auth.transport.requests import Request
@@ -205,8 +210,20 @@ def main_gmail(  _to_email : str , _from_email = "system.python.web@gmail.com" ,
 		#prepare and attach message body 
 		formatted_msg = emojize(_msg_content)
 		formatted_msg ="<p><h3> {0} </h3></P>".format(formatted_msg)
-		message.set_payload(MIMEText(formatted_msg , 'html')) 
+		message.attach(MIMEText(formatted_msg , 'html'))  #dont use payload to attach it edits the original MIMEmultipart() payload
+  
 
+	#Example if have Images or any elements to attach :
+		#prepare any other elements e.g.(images)
+		# formatted_msg = emojize(_msg_content)
+		# formatted_msg ="<p><h3> {0} </h3></P> <br><img src=\"cid:image1\"><br> ".format(formatted_msg)
+		# message.attach(MIMEText(formatted_msg , 'html'))  #dont use payload to attach it edits the original MIMEmultipart() payload
+		# img1 = open(r"./qr1.PNG" , 'rb')
+		# mime_img1 = MIMEImage(img1.read())
+		# mime_img1.add_header('Content-ID', '<image1>')
+		# message.attach(mime_img1)
+  
+		
   
 	# start a secure SSL connection
 		#ssl(Secure Sockets Layer) = secure and encrypted communication channel 

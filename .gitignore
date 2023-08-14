@@ -7,7 +7,6 @@ __pycache__/
 __pycache__/*
 docs\parking_proj_poster_assets\*
 docs\parking_proj_poster_assets\
-.vscode/
 .vscode/*
 .mypy_cache/
 .mypy_cache/*
@@ -23,3 +22,5 @@ client_secret.json
 egy_logo.png
 ID_samples.docx
 smart_parking.db
+*.mp4
+*.mov
