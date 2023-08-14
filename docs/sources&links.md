@@ -73,9 +73,15 @@ _(pytesseract is better with docs and text. easyocr slower but better with image
 	* [Stepper library in arduino](https://www.arduino.cc/reference/en/libraries/stepper/)
 
 	* [Arduino Functions](https://www.arduino.cc/reference/en/#functions)
+***
 
+> ## Gmail API
 
+* [How to link Gmail API and send Emails via python](https://realpython.com/python-send-email)
+* [Google cloud project site](https://console.cloud.google.com) 
+  	- <sub> _(you need to make google project and configure it first to be able to use gmail in your python project)_ </sub>
 
+****
 > ## Extra
 
 * https://www.sqlitetutorial.net/
