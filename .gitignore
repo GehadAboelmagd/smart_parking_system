@@ -5,8 +5,8 @@
 #IGNORED DIRS
 __pycache__/
 __pycache__/*
-docs\parking_proj_poster_assets\*
-docs\parking_proj_poster_assets\
+docs/parking_proj_poster_assets/*
+docs/parking_proj_poster_assets/
 .vscode/*
 .mypy_cache/
 .mypy_cache/*
