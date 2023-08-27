@@ -1,4 +1,4 @@
- [![version badge](https://img.shields.io/badge/Version-v2.0B-32c854)](https://github.com/orsnaro/smart-parking-system/master) [![lastest pre release was](https://img.shields.io/github/release-date-pre/orsnaro/smart-parking-system?label=latest%20release%20date&color=9332af)](https://github.com/orsnaro/smart-parking-system/releases/latest)
+ [![version badge](https://img.shields.io/badge/Version-v2.0B-32c854)](https://github.com/orsnaro/smart-parking-system/master) [![lastest pre release was](https://img.shields.io/github/release-date-pre/orsnaro/smart-parking-system?label=latest%20release&color=9332af)](https://github.com/orsnaro/smart-parking-system/releases/latest)
 
 # Smart Parking System 🚗
 
