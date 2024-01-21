@@ -35,7 +35,10 @@
 
 --- 
 > ## 🚀 Project in Action! 
-![gif showing smart parking in action](./docs/SMART_GARAGE_in_action.gif)
+<p align="center">
+  <img width="1280" height="720" src="./docs/SMART_GARAGE_in_action.gif">
+</p>
+<![gif showing smart parking in action](./docs/SMART_GARAGE_in_action.gif)>
 
 </br>
 </br>
