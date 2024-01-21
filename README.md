@@ -33,6 +33,10 @@
 
 ![poster](/docs/Poster.png)
 
+--- 
+> ## 🚀 Project in Action! 
+[![gif showing smart parking in action](https://share.gifyoutube.com/KzB6Gb.gif)](https://youtu.be/wd5_8dwqPX4)
+
 </br>
 </br>
 
