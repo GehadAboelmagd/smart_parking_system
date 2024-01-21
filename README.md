@@ -35,7 +35,7 @@
 
 --- 
 > ## 🚀 Project in Action! 
-[![gif showing smart parking in action](https://share.gifyoutube.com/KzB6Gb.gif)](https://youtu.be/wd5_8dwqPX4)
+![gif showing smart parking in action](./docs/SMART_GARAGE_in_action.gif)
 
 </br>
 </br>
@@ -95,5 +95,5 @@
   * [Hardware Components](docs/Hardware_components.md) 
   * regarding google Api  : [readme if you wont to use gmail feature](./database_data/readme.md)
 
-
-<sub><sub>📍Interpreter version **Python** : _cPython  v3.11.0 [Compiler : MSC v.1933 AMD64]_  || **Arduinno IDE** : _v2.0.4_ 📍
+> [!NOTE]  
+> <sub><sub>📍Interpreter version **Python** : _cPython  v3.11.0 [Compiler : MSC v.1933 AMD64]_  || **Arduinno IDE** : _v2.0.4_ �
