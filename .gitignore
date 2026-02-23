@@ -26,3 +26,5 @@ smart_parking.db
 *.mov
 .is_autovEnv  
 
+ 
+.is_autoVenv 
